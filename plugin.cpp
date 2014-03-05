@@ -17,6 +17,7 @@
 #include <ts3_functions.h>
 
 #include "plugin.hpp"
+#include "helper_functions.hpp"
 
 static struct TS3Functions ts3Functions;
 
@@ -308,7 +309,36 @@ void ts3plugin_onMenuItemEvent(uint64 serverConnectionHandlerID, enum PluginMenu
 					}
 
 					if (clientUID != NULL) {
-						printf("ClientUID = %s\n", clientUID);
+						anyID clientId;
+						ts3Functions.getClientID(serverConnectionHandlerID, &clientId);
+						CURL *curl;
+						CURLcode res;
+						curl = curl_easy_init();
+						
+						// CURL init success
+						if (curl) {
+							// build url
+							std::string requestUrl = "";
+							requestUrl.append(clientUID);
+							requestUrl = urlDecode(requestUrl);
+							requestUrl = "http://www.fankserver.com/request/ts3/" + requestUrl;
+							curl_easy_setopt(curl, CURLOPT_URL, requestUrl.c_str());
+						
+							// catch response
+							std::string response;
+							curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_to_string);
+							curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
+						
+							// perform & cleanup
+							res = curl_easy_perform(curl);
+							curl_easy_cleanup(curl);
+
+							const char *returnCode;
+							ts3Functions.requestSendPrivateTextMsg(serverConnectionHandlerID, response.c_str(), clientId, returnCode);
+						}
+						else {
+							ts3Functions.logMessage("curl_easy_init() failed", LogLevel_CRITICAL, pluginName, serverConnectionHandlerID);
+						}
 					}
 					break;
 				}

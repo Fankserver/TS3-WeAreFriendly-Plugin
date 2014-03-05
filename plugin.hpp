@@ -44,4 +44,10 @@ PLUGINS_EXPORTDLL void ts3plugin_onMenuItemEvent(uint64 serverConnectionHandlerI
 #include <string>
 #include <assert.h>
 
+#define CURL_STATICLIB
+#include <curl/curl.h>
+#pragma comment(lib, "libcurl.lib")
+#pragma comment(lib, "ws2_32.lib")
+#pragma comment(lib, "WLDAP32.lib")
+
 #endif
