@@ -1,0 +1,3 @@
+[submodule "Curl"]
+	path = deps/Curl
+	url = https://github.com/bagder/curl.git
