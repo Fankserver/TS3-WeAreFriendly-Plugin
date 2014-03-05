@@ -88,7 +88,7 @@
     <IncludePath Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">D:\Program Files\TeamSpeak 3 Client\pluginsdk\include;$(IncludePath)</IncludePath>
     <IncludePath Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">D:\Program Files\TeamSpeak 3 Client\pluginsdk\include;$(IncludePath)</IncludePath>
     <IncludePath Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">D:\Program Files\TeamSpeak 3 Client\pluginsdk\include;$(IncludePath)</IncludePath>
-    <IncludePath Condition="'$(Configuration)|$(Platform)'=='Release|x64'">D:\Program Files\TeamSpeak 3 Client\pluginsdk\include;$(IncludePath)</IncludePath>
+    <IncludePath Condition="'$(Configuration)|$(Platform)'=='Release|x64'">D:\Program Files\TeamSpeak 3 Client\pluginsdk\include;D:\Github\WAF_TS3_plugin\deps\curlcpp\include;D:\Github\WAF_TS3_plugin\deps\Curl\include;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
