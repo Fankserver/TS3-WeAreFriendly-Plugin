@@ -41,4 +41,7 @@ PLUGINS_EXPORTDLL void ts3plugin_onMenuItemEvent(uint64 serverConnectionHandlerI
 }
 #endif
 
+#include <string>
+#include <assert.h>
+
 #endif
