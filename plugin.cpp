@@ -16,7 +16,7 @@
 #include <public_rare_definitions.h>
 #include <ts3_functions.h>
 
-#include "plugin.h"
+#include "plugin.hpp"
 
 static struct TS3Functions ts3Functions;
 
@@ -110,17 +110,12 @@ int ts3plugin_init() {
     char configPath[PATH_BUFSIZE];
 	char pluginPath[PATH_BUFSIZE];
 
-    /* Your plugin init code here */
-    printf("PLUGIN: init\n");
-
     /* Example on how to query application, resources and configuration paths from client */
     /* Note: Console client returns empty string for app and resources path */
     ts3Functions.getAppPath(appPath, PATH_BUFSIZE);
     ts3Functions.getResourcesPath(resourcesPath, PATH_BUFSIZE);
     ts3Functions.getConfigPath(configPath, PATH_BUFSIZE);
 	ts3Functions.getPluginPath(pluginPath, PATH_BUFSIZE);
-
-	printf("PLUGIN: App path: %s\nResources path: %s\nConfig path: %s\nPlugin path: %s\n", appPath, resourcesPath, configPath, pluginPath);
 
     return 0;  /* 0 = success, 1 = failure, -2 = failure but client will not show a "failed to load" warning */
 	/* -2 is a very special case and should only be used if a plugin displays a dialog (e.g. overlay) asking the user to disable
@@ -130,15 +125,6 @@ int ts3plugin_init() {
 
 /* Custom code called right before the plugin is unloaded */
 void ts3plugin_shutdown() {
-    /* Your plugin cleanup code here */
-    printf("PLUGIN: shutdown\n");
-
-	/*
-	 * Note:
-	 * If your plugin implements a settings dialog, it must be closed and deleted here, else the
-	 * TeamSpeak client will most likely crash (DLL removed but dialog from DLL code still open).
-	 */
-
 	/* Free pluginID if we registered it */
 	if(pluginID) {
 		free(pluginID);
@@ -160,7 +146,7 @@ void ts3plugin_registerPluginID(const char* id) {
 	const size_t sz = strlen(id) + 1;
 	pluginID = (char*)malloc(sz * sizeof(char));
 	_strcpy(pluginID, sz, id);  /* The id buffer will invalidate after exiting this function */
-	printf("PLUGIN: registerPluginID: %s\n", pluginID);
+	//printf("PLUGIN: registerPluginID: %s\n", pluginID);
 }
 
 /*
@@ -317,7 +303,7 @@ void ts3plugin_onMenuItemEvent(uint64 serverConnectionHandlerID, enum PluginMenu
 				case MENU_ID_CLIENT_INGAMENICKNAMES: {
 					/* Menu client InGame Nicknames was triggered */
 					char *clientUID = NULL;
-					if (ts3Functions.getClientVariableAsString(serverConnectionHandlerID, (anyID)selectedItemID, 0, &clientUID) == ERROR_ok) {
+					if (ts3Functions.getClientVariableAsString(serverConnectionHandlerID, (anyID)selectedItemID, 0, &clientUID) != ERROR_ok) {
 						ts3Functions.logMessage("Error getClientVariableAsString", LogLevel_INFO, pluginName, serverConnectionHandlerID);
 					}
 
