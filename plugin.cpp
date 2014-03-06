@@ -41,6 +41,8 @@ static struct TS3Functions ts3Functions;
 static char* pluginID = NULL;
 
 #define WAITROOM_CHANNEL_ID 123
+#define WAITROOMPOLICE_CHANNEL_ID 441
+#define WAITROOMSERVERADMIN_CHANNEL_ID 419
 static AdminTool *adminTool;
 
 #ifdef _WIN32
@@ -232,7 +234,9 @@ static struct PluginMenuItem* createMenuItem(enum PluginMenuType type, int id, c
  */
 enum {
 	MENU_ID_CLIENT_INGAMENICKNAMES = 1,
-	MENU_ID_GLOBAL_WAITROOMLIST
+	MENU_ID_GLOBAL_WAITROOMLIST,
+	MENU_ID_GLOBAL_WAITROOMLIST_POLICE,
+	MENU_ID_GLOBAL_WAITROOMLIST_SERVERADMIN
 };
 
 /*
@@ -259,9 +263,11 @@ void ts3plugin_initMenus(struct PluginMenuItem*** menuItems, char** menuIcon) {
 	 * e.g. for "test_plugin.dll", icon "1.png" is loaded from <TeamSpeak 3 Client install dir>\plugins\test_plugin\1.png
 	 */
 
-	BEGIN_CREATE_MENUS(2);  /* IMPORTANT: Number of menu items must be correct! */
+	BEGIN_CREATE_MENUS(4);  /* IMPORTANT: Number of menu items must be correct! */
 	CREATE_MENU_ITEM(PLUGIN_MENU_TYPE_CLIENT, MENU_ID_CLIENT_INGAMENICKNAMES, "InGame Nicknames", "icons/ident.png");
 	CREATE_MENU_ITEM(PLUGIN_MENU_TYPE_GLOBAL, MENU_ID_GLOBAL_WAITROOMLIST, "Wartezimmer Priorität", "icons/list.png");
+	CREATE_MENU_ITEM(PLUGIN_MENU_TYPE_GLOBAL, MENU_ID_GLOBAL_WAITROOMLIST_POLICE, "Wartezimmer Polizei Priorität", "icons/list.png");
+	CREATE_MENU_ITEM(PLUGIN_MENU_TYPE_GLOBAL, MENU_ID_GLOBAL_WAITROOMLIST_SERVERADMIN, "Wartezimmer ServerAdmin Priorität", "icons/list.png");
 	END_CREATE_MENUS;  /* Includes an assert checking if the number of menu items matched */
 
 	/*
@@ -293,20 +299,54 @@ void ts3plugin_initMenus(struct PluginMenuItem*** menuItems, char** menuIcon) {
 /* Clientlib */
 
 void ts3plugin_onClientMoveEvent(uint64 serverConnectionHandlerID, anyID clientID, uint64 oldChannelID, uint64 newChannelID, int visibility, const char* moveMessage) {
+	// Add/remove clients for waitroom
 	if (newChannelID == WAITROOM_CHANNEL_ID) {
 		adminTool->addWaitRoomStack(clientID);
 	}
 	if (oldChannelID == WAITROOM_CHANNEL_ID) {
 		adminTool->removeWaitRoomStack(clientID);
+	}
+
+	// Add/remove clients for waitroom police
+	if (newChannelID == WAITROOMPOLICE_CHANNEL_ID) {
+		adminTool->addWaitRoomPoliceStack(clientID);
+	}
+	if (oldChannelID == WAITROOMPOLICE_CHANNEL_ID) {
+		adminTool->removeWaitRoomPoliceStack(clientID);
+	}
+	
+	// Add/remove clients for waitroom serveradmin
+	if (newChannelID == WAITROOMSERVERADMIN_CHANNEL_ID) {
+		adminTool->addWaitRoomServerAdminStack(clientID);
+	}
+	if (oldChannelID == WAITROOMSERVERADMIN_CHANNEL_ID) {
+		adminTool->removeWaitRoomServerAdminStack(clientID);
 	}
 }
 
 void ts3plugin_onClientMoveMovedEvent(uint64 serverConnectionHandlerID, anyID clientID, uint64 oldChannelID, uint64 newChannelID, int visibility, anyID moverID, const char* moverName, const char* moverUniqueIdentifier, const char* moveMessage) {
+	// Add/remove clients for waitroom
 	if (newChannelID == WAITROOM_CHANNEL_ID) {
 		adminTool->addWaitRoomStack(clientID);
 	}
 	if (oldChannelID == WAITROOM_CHANNEL_ID) {
 		adminTool->removeWaitRoomStack(clientID);
+	}
+
+	// Add/remove clients for waitroom police
+	if (newChannelID == WAITROOMPOLICE_CHANNEL_ID) {
+		adminTool->addWaitRoomPoliceStack(clientID);
+	}
+	if (oldChannelID == WAITROOMPOLICE_CHANNEL_ID) {
+		adminTool->removeWaitRoomPoliceStack(clientID);
+	}
+
+	// Add/remove clients for waitroom serveradmin
+	if (newChannelID == WAITROOMSERVERADMIN_CHANNEL_ID) {
+		adminTool->addWaitRoomServerAdminStack(clientID);
+	}
+	if (oldChannelID == WAITROOMSERVERADMIN_CHANNEL_ID) {
+		adminTool->removeWaitRoomServerAdminStack(clientID);
 	}
 }
 
@@ -352,8 +392,67 @@ void ts3plugin_onMenuItemEvent(uint64 serverConnectionHandlerID, enum PluginMenu
 					}
 					else {
 						// show me the list
-						const char *returnCode;
-						if (ts3Functions.requestSendPrivateTextMsg(serverConnectionHandlerID, waitRoomList.str().c_str(), clientId, returnCode) != ERROR_ok) {
+						if (ts3Functions.requestSendPrivateTextMsg(serverConnectionHandlerID, waitRoomList.str().c_str(), clientId, NULL) != ERROR_ok) {
+							ts3Functions.logMessage("Error requestSendPrivateTextMsg", LogLevel_ERROR, pluginName, serverConnectionHandlerID);
+						}
+					}
+
+					break;
+				}
+				case MENU_ID_GLOBAL_WAITROOMLIST_POLICE: {
+					/* Menu global waitroom list was triggered */
+					std::ostringstream waitRoomList;
+					std::vector<anyID> waitRoomStock = adminTool->getWaitRoomPoliceStack();
+
+					waitRoomList << "\n";
+
+					// build priority list
+					for (int i = 0; i < waitRoomStock.size(); i++) {
+						char *clientNickname;
+						if (ts3Functions.getClientVariableAsString(serverConnectionHandlerID, waitRoomStock[i], CLIENT_NICKNAME, &clientNickname) != ERROR_ok) {
+							strstr(clientNickname, "FEHLER");
+						}
+						waitRoomList << "" << (i + 1) << ". " << clientNickname << "\n";
+					}
+
+					// get own client id
+					anyID clientId;
+					if (ts3Functions.getClientID(serverConnectionHandlerID, &clientId) != ERROR_ok) {
+						ts3Functions.logMessage("Error getClientID", LogLevel_ERROR, pluginName, serverConnectionHandlerID);
+					}
+					else {
+						// show me the list
+						if (ts3Functions.requestSendPrivateTextMsg(serverConnectionHandlerID, waitRoomList.str().c_str(), clientId, NULL) != ERROR_ok) {
+							ts3Functions.logMessage("Error requestSendPrivateTextMsg", LogLevel_ERROR, pluginName, serverConnectionHandlerID);
+						}
+					}
+
+					break;
+				}
+				case MENU_ID_GLOBAL_WAITROOMLIST_SERVERADMIN: {
+					/* Menu global waitroom list was triggered */
+					std::ostringstream waitRoomList;
+					std::vector<anyID> waitRoomStock = adminTool->getWaitRoomServerAdminStack();
+
+					waitRoomList << "\n";
+
+					// build priority list
+					for (int i = 0; i < waitRoomStock.size(); i++) {
+						char *clientNickname;
+						if (ts3Functions.getClientVariableAsString(serverConnectionHandlerID, waitRoomStock[i], CLIENT_NICKNAME, &clientNickname) != ERROR_ok) {
+							strstr(clientNickname, "FEHLER");
+						}
+						waitRoomList << "" << (i + 1) << ". " << clientNickname << "\n";
+					}
+
+					// get own client id
+					anyID clientId;
+					if (ts3Functions.getClientID(serverConnectionHandlerID, &clientId) != ERROR_ok) {
+						ts3Functions.logMessage("Error getClientID", LogLevel_ERROR, pluginName, serverConnectionHandlerID);
+					}
+					else {
+						// show me the list
+						if (ts3Functions.requestSendPrivateTextMsg(serverConnectionHandlerID, waitRoomList.str().c_str(), clientId, NULL) != ERROR_ok) {
 							ts3Functions.logMessage("Error requestSendPrivateTextMsg", LogLevel_ERROR, pluginName, serverConnectionHandlerID);
 						}
 					}
