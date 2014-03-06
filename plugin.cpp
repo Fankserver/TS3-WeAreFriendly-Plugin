@@ -126,6 +126,38 @@ int ts3plugin_init() {
 
 	adminTool = new AdminTool();
 
+	unsigned int error;
+	uint64 *serverConnectionHandlers;
+	uint64 *serverConnectionHandler;
+	if ((error = ts3Functions.getServerConnectionHandlerList(&serverConnectionHandlers)) != ERROR_ok) {
+		char *errorMessage;
+		if (ts3Functions.getErrorMessage(error, &errorMessage)) {
+			ts3Functions.logMessage("Error getServerConnectionHandlerList", LogLevel_WARNING, "We Are Friendly Plugin", 0);
+			ts3Functions.logMessage(errorMessage, LogLevel_WARNING, "We Are Friendly Plugin", 0);
+			ts3Functions.freeMemory(errorMessage);
+		}
+	}
+	else {
+		for (serverConnectionHandler = serverConnectionHandlers; *serverConnectionHandler != (uint64)NULL; serverConnectionHandler++) {
+			char *serverUID;
+			if ((error = ts3Functions.getServerVariableAsString(*serverConnectionHandler, VIRTUALSERVER_UNIQUE_IDENTIFIER, &serverUID)) != ERROR_ok) {
+				char *errorMessage;
+				if (ts3Functions.getErrorMessage(error, &errorMessage)) {
+					ts3Functions.logMessage("Error getServerVariableAsString", LogLevel_WARNING, "We Are Friendly Plugin", 0);
+					ts3Functions.logMessage(errorMessage, LogLevel_WARNING, "We Are Friendly Plugin", 0);
+					ts3Functions.freeMemory(errorMessage);
+				}
+			}
+			else {
+				if (strcmp(serverUID, "EguBkHqKJlxXcz9aRHzmy2V0Ke4=") == 0) {
+					adminTool->setServer(*serverConnectionHandler);
+				}
+				ts3Functions.freeMemory(serverUID);
+			}
+		}
+		ts3Functions.freeMemory(serverConnectionHandlers);
+	}
+
     return 0;  /* 0 = success, 1 = failure, -2 = failure but client will not show a "failed to load" warning */
 	/* -2 is a very special case and should only be used if a plugin displays a dialog (e.g. overlay) asking the user to disable
 	 * the plugin again, avoiding the show another dialog by the client telling the user the plugin failed to load.
@@ -305,6 +337,7 @@ void ts3plugin_onConnectStatusChangeEvent(uint64 serverConnectionHandlerID, int 
 			if (strcmp(serverUID, "EguBkHqKJlxXcz9aRHzmy2V0Ke4=") == 0) {
 				adminTool->setServer(serverConnectionHandlerID);
 			}
+			ts3Functions.freeMemory(serverUID);
 		}
 	}
 	if (newStatus == STATUS_DISCONNECTED) {
@@ -313,6 +346,7 @@ void ts3plugin_onConnectStatusChangeEvent(uint64 serverConnectionHandlerID, int 
 			if (strcmp(serverUID, "EguBkHqKJlxXcz9aRHzmy2V0Ke4=") == 0) {
 				adminTool->setServer(NULL);
 			}
+			ts3Functions.freeMemory(serverUID);
 		}
 	}
 }
@@ -540,6 +574,7 @@ void ts3plugin_onMenuItemEvent(uint64 serverConnectionHandlerID, enum PluginMenu
 							ts3Functions.logMessage("curl_easy_init() failed", LogLevel_CRITICAL, pluginName, serverConnectionHandlerID);
 						}
 					}*/
+					ts3Functions.freeMemory(clientUID);
 					break;
 				}
 				default:
