@@ -301,6 +301,15 @@ void ts3plugin_onClientMoveEvent(uint64 serverConnectionHandlerID, anyID clientI
 	}
 }
 
+void ts3plugin_onClientMoveMovedEvent(uint64 serverConnectionHandlerID, anyID clientID, uint64 oldChannelID, uint64 newChannelID, int visibility, anyID moverID, const char* moverName, const char* moverUniqueIdentifier, const char* moveMessage) {
+	if (newChannelID == WAITROOM_CHANNEL_ID) {
+		adminTool->addWaitRoomStack(clientID);
+	}
+	if (oldChannelID == WAITROOM_CHANNEL_ID) {
+		adminTool->removeWaitRoomStack(clientID);
+	}
+}
+
 /* Client UI callbacks */
 
 /*
