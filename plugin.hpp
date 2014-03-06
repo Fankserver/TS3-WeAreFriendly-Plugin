@@ -34,6 +34,9 @@ PLUGINS_EXPORTDLL void ts3plugin_freeMemory(void* data);
 PLUGINS_EXPORTDLL int ts3plugin_requestAutoload();
 PLUGINS_EXPORTDLL void ts3plugin_initMenus(struct PluginMenuItem*** menuItems, char** menuIcon);
 
+/* Clientlib */
+PLUGINS_EXPORTDLL void ts3plugin_onClientMoveEvent(uint64 serverConnectionHandlerID, anyID clientID, uint64 oldChannelID, uint64 newChannelID, int visibility, const char* moveMessage);
+
 /* Client UI callbacks */
 PLUGINS_EXPORTDLL void ts3plugin_onMenuItemEvent(uint64 serverConnectionHandlerID, enum PluginMenuType type, int menuItemID, uint64 selectedItemID);
 
@@ -42,12 +45,14 @@ PLUGINS_EXPORTDLL void ts3plugin_onMenuItemEvent(uint64 serverConnectionHandlerI
 #endif
 
 #include <string>
+#include <iostream>
+#include <sstream>
 #include <assert.h>
 
-#define CURL_STATICLIB
-#include <curl/curl.h>
-#pragma comment(lib, "libcurl.lib")
-#pragma comment(lib, "ws2_32.lib")
-#pragma comment(lib, "WLDAP32.lib")
+//#define CURL_STATICLIB
+//#include <curl/curl.h>
+//#pragma comment(lib, "libcurl.lib")
+//#pragma comment(lib, "ws2_32.lib")
+//#pragma comment(lib, "WLDAP32.lib")
 
 #endif

@@ -9,6 +9,9 @@
       <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
       <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
     </Filter>
+    <Filter Include="WeAreFriendly">
+      <UniqueIdentifier>{a9a249a4-fdfd-4a65-9a3e-cc7475a7818c}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="plugin.cpp">
@@ -17,6 +20,9 @@
     <ClCompile Include="helper_functions.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="AdminTool.cpp">
+      <Filter>WeAreFriendly</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="plugin.hpp">
@@ -24,6 +30,9 @@
     </ClInclude>
     <ClInclude Include="helper_functions.hpp">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="AdminTool.h">
+      <Filter>WeAreFriendly</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

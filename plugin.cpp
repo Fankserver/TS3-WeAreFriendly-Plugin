@@ -18,6 +18,7 @@
 
 #include "plugin.hpp"
 #include "helper_functions.hpp"
+#include "AdminTool.h"
 
 static struct TS3Functions ts3Functions;
 
@@ -38,6 +39,9 @@ static struct TS3Functions ts3Functions;
 #define RETURNCODE_BUFSIZE 128
 
 static char* pluginID = NULL;
+
+#define WAITROOM_CHANNEL_ID 123
+static AdminTool *adminTool;
 
 #ifdef _WIN32
 /* Helper function to convert wchar_T to Utf-8 encoded strings on Windows */
@@ -117,6 +121,8 @@ int ts3plugin_init() {
     ts3Functions.getResourcesPath(resourcesPath, PATH_BUFSIZE);
     ts3Functions.getConfigPath(configPath, PATH_BUFSIZE);
 	ts3Functions.getPluginPath(pluginPath, PATH_BUFSIZE);
+
+	adminTool = new AdminTool();
 
     return 0;  /* 0 = success, 1 = failure, -2 = failure but client will not show a "failed to load" warning */
 	/* -2 is a very special case and should only be used if a plugin displays a dialog (e.g. overlay) asking the user to disable
@@ -226,6 +232,7 @@ static struct PluginMenuItem* createMenuItem(enum PluginMenuType type, int id, c
  */
 enum {
 	MENU_ID_CLIENT_INGAMENICKNAMES = 1,
+	MENU_ID_GLOBAL_WAITROOMLIST
 };
 
 /*
@@ -252,8 +259,9 @@ void ts3plugin_initMenus(struct PluginMenuItem*** menuItems, char** menuIcon) {
 	 * e.g. for "test_plugin.dll", icon "1.png" is loaded from <TeamSpeak 3 Client install dir>\plugins\test_plugin\1.png
 	 */
 
-	BEGIN_CREATE_MENUS(1);  /* IMPORTANT: Number of menu items must be correct! */
+	BEGIN_CREATE_MENUS(2);  /* IMPORTANT: Number of menu items must be correct! */
 	CREATE_MENU_ITEM(PLUGIN_MENU_TYPE_CLIENT, MENU_ID_CLIENT_INGAMENICKNAMES, "InGame Nicknames", "icons/ident.png");
+	CREATE_MENU_ITEM(PLUGIN_MENU_TYPE_GLOBAL, MENU_ID_GLOBAL_WAITROOMLIST, "Wartezimmer Prio", "icons/priority.png");
 	END_CREATE_MENUS;  /* Includes an assert checking if the number of menu items matched */
 
 	/*
@@ -282,6 +290,17 @@ void ts3plugin_initMenus(struct PluginMenuItem*** menuItems, char** menuIcon) {
  * See the clientlib documentation for details on each function.
  */
 
+/* Clientlib */
+
+void ts3plugin_onClientMoveEvent(uint64 serverConnectionHandlerID, anyID clientID, uint64 oldChannelID, uint64 newChannelID, int visibility, const char* moveMessage) {
+	if (newChannelID == WAITROOM_CHANNEL_ID) {
+		adminTool->addWaitRoomStack(clientID);
+	}
+	if (oldChannelID == WAITROOM_CHANNEL_ID) {
+		adminTool->removeWaitRoomStack(clientID);
+	}
+}
+
 /* Client UI callbacks */
 
 /*
@@ -298,6 +317,45 @@ void ts3plugin_onMenuItemEvent(uint64 serverConnectionHandlerID, enum PluginMenu
 	strstr((const char *)pluginName, ts3plugin_name());
 
 	switch(type) {
+		case PLUGIN_MENU_TYPE_GLOBAL:
+			/* Global menu item was triggered. selectedItemID is unused and set to zero. */
+			switch (menuItemID) {
+				case MENU_ID_GLOBAL_WAITROOMLIST: {
+					/* Menu global waitroom list was triggered */
+					std::ostringstream waitRoomList;
+					std::vector<anyID> waitRoomStock = adminTool->getWaitRoomStack();
+
+					waitRoomList << "Warteraum Prio list" << "\n";
+
+					// build priority list
+					for (int i = 0; i < waitRoomStock.size(); i++) {
+						char *clientNickname;
+						if (ts3Functions.getClientVariableAsString(serverConnectionHandlerID, waitRoomStock[i], CLIENT_NICKNAME, &clientNickname) != ERROR_ok) {
+							strstr(clientNickname, "FEHLER");
+						}
+						waitRoomList << "" << (i + 1) << ". " << clientNickname << "\n";
+					}
+
+					// get own client id
+					anyID clientId;
+					if (ts3Functions.getClientID(serverConnectionHandlerID, &clientId) != ERROR_ok) {
+						ts3Functions.logMessage("Error getClientID", LogLevel_ERROR, pluginName, serverConnectionHandlerID);
+					}
+					else {
+						// show me the list
+						const char *returnCode;
+						if (ts3Functions.requestSendPrivateTextMsg(serverConnectionHandlerID, waitRoomList.str().c_str(), clientId, returnCode) != ERROR_ok) {
+							ts3Functions.logMessage("Error requestSendPrivateTextMsg", LogLevel_ERROR, pluginName, serverConnectionHandlerID);
+						}
+					}
+
+					break;
+				}
+				default: {
+					break;
+				}
+			}
+			break;
 		case PLUGIN_MENU_TYPE_CLIENT:
 			/* Client contextmenu item was triggered. selectedItemID is the clientID of the selected client */
 			switch(menuItemID) {
@@ -307,7 +365,7 @@ void ts3plugin_onMenuItemEvent(uint64 serverConnectionHandlerID, enum PluginMenu
 					if (ts3Functions.getClientVariableAsString(serverConnectionHandlerID, (anyID)selectedItemID, 0, &clientUID) != ERROR_ok) {
 						ts3Functions.logMessage("Error getClientVariableAsString", LogLevel_INFO, pluginName, serverConnectionHandlerID);
 					}
-
+					/*
 					if (clientUID != NULL) {
 						anyID clientId;
 						ts3Functions.getClientID(serverConnectionHandlerID, &clientId);
@@ -339,7 +397,7 @@ void ts3plugin_onMenuItemEvent(uint64 serverConnectionHandlerID, enum PluginMenu
 						else {
 							ts3Functions.logMessage("curl_easy_init() failed", LogLevel_CRITICAL, pluginName, serverConnectionHandlerID);
 						}
-					}
+					}*/
 					break;
 				}
 				default:
