@@ -298,7 +298,31 @@ void ts3plugin_initMenus(struct PluginMenuItem*** menuItems, char** menuIcon) {
 
 /* Clientlib */
 
+void ts3plugin_onConnectStatusChangeEvent(uint64 serverConnectionHandlerID, int newStatus, unsigned int errorNumber) {
+	if (newStatus == STATUS_CONNECTION_ESTABLISHED) {
+		char *serverUID;
+		if (ts3Functions.getServerVariableAsString(serverConnectionHandlerID, VIRTUALSERVER_UNIQUE_IDENTIFIER, &serverUID) == ERROR_ok) {
+			if (strcmp(serverUID, "EguBkHqKJlxXcz9aRHzmy2V0Ke4=") == 0) {
+				adminTool->setServer(serverConnectionHandlerID);
+			}
+		}
+	}
+	if (newStatus == STATUS_DISCONNECTED) {
+		char *serverUID;
+		if (ts3Functions.getServerVariableAsString(serverConnectionHandlerID, VIRTUALSERVER_UNIQUE_IDENTIFIER, &serverUID) == ERROR_ok) {
+			if (strcmp(serverUID, "EguBkHqKJlxXcz9aRHzmy2V0Ke4=") == 0) {
+				adminTool->setServer(NULL);
+			}
+		}
+	}
+}
+
 void ts3plugin_onClientMoveEvent(uint64 serverConnectionHandlerID, anyID clientID, uint64 oldChannelID, uint64 newChannelID, int visibility, const char* moveMessage) {
+	// only execute on We are friendly TeamSpeak
+	if (!adminTool->checkServer(serverConnectionHandlerID)) {
+		return;
+	}
+
 	// Add/remove clients for waitroom
 	if (newChannelID == WAITROOM_CHANNEL_ID) {
 		adminTool->addWaitRoomStack(clientID);
@@ -314,7 +338,7 @@ void ts3plugin_onClientMoveEvent(uint64 serverConnectionHandlerID, anyID clientI
 	if (oldChannelID == WAITROOMPOLICE_CHANNEL_ID) {
 		adminTool->removeWaitRoomPoliceStack(clientID);
 	}
-	
+
 	// Add/remove clients for waitroom serveradmin
 	if (newChannelID == WAITROOMSERVERADMIN_CHANNEL_ID) {
 		adminTool->addWaitRoomServerAdminStack(clientID);
@@ -325,6 +349,11 @@ void ts3plugin_onClientMoveEvent(uint64 serverConnectionHandlerID, anyID clientI
 }
 
 void ts3plugin_onClientMoveMovedEvent(uint64 serverConnectionHandlerID, anyID clientID, uint64 oldChannelID, uint64 newChannelID, int visibility, anyID moverID, const char* moverName, const char* moverUniqueIdentifier, const char* moveMessage) {
+	// only execute on We are friendly TeamSpeak
+	if (!adminTool->checkServer(serverConnectionHandlerID)) {
+		return;
+	}
+
 	// Add/remove clients for waitroom
 	if (newChannelID == WAITROOM_CHANNEL_ID) {
 		adminTool->addWaitRoomStack(clientID);
@@ -364,6 +393,11 @@ void ts3plugin_onClientMoveMovedEvent(uint64 serverConnectionHandlerID, anyID cl
 void ts3plugin_onMenuItemEvent(uint64 serverConnectionHandlerID, enum PluginMenuType type, int menuItemID, uint64 selectedItemID) {
 	char *pluginName = "We are friendly Plugin";
 	strstr((const char *)pluginName, ts3plugin_name());
+
+	// only execute on We are friendly TeamSpeak
+	if (!adminTool->checkServer(serverConnectionHandlerID)) {
+		return;
+	}
 
 	switch(type) {
 		case PLUGIN_MENU_TYPE_GLOBAL:

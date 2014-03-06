@@ -6,10 +6,14 @@ private:
 	std::vector<anyID> waitRoomStack;
 	std::vector<anyID> waitRoomPoliceStack;
 	std::vector<anyID> waitRoomServerAdminStack;
+	uint64 serverConnectionHandlerID;
 
 public:
 	AdminTool::AdminTool();
 	~AdminTool();
+
+	void setServer(uint64 serverConnectionHandlerID);
+	bool checkServer(uint64 serverConnectionHandlerID);
 	
 	void addWaitRoomStack(anyID ClientId);
 	void removeWaitRoomStack(anyID ClientID);

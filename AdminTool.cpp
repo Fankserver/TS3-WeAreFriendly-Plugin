@@ -7,6 +7,18 @@ AdminTool::~AdminTool() {
 
 }
 
+void AdminTool::setServer(uint64 _serverConnectionHandlerID) {
+	this->serverConnectionHandlerID = _serverConnectionHandlerID;
+}
+bool AdminTool::checkServer(uint64 _serverConnectionHandlerID) {
+	if (this->serverConnectionHandlerID != NULL && this->serverConnectionHandlerID == _serverConnectionHandlerID) {
+		return true;
+	}
+	else {
+		return false;
+	}
+}
+
 void AdminTool::addWaitRoomStack(anyID _clientId) {
 	this->waitRoomStack.push_back(_clientId);
 }
