@@ -23,9 +23,14 @@ void AdminTool::addWaitRoomStack(anyID _clientId) {
 	this->waitRoomStack.push_back(_clientId);
 }
 void AdminTool::removeWaitRoomStack(anyID _clientId) {
-	for (int i = 0; i < this->waitRoomStack.size(); i++) {
-		if (this->waitRoomStack.at(i) == _clientId) {
-			this->waitRoomStack.erase(this->waitRoomStack.begin() + i);
+	for (std::vector<anyID>::iterator	it = this->waitRoomStack.begin();
+										it != this->waitRoomStack.end();
+		) {
+		if (*it == _clientId) {
+			this->waitRoomStack.erase(it);
+		}
+		else {
+			it++;
 		}
 	}
 }
@@ -37,9 +42,14 @@ void AdminTool::addWaitRoomPoliceStack(anyID _clientId) {
 	this->waitRoomPoliceStack.push_back(_clientId);
 }
 void AdminTool::removeWaitRoomPoliceStack(anyID _clientId) {
-	for (int i = 0; i < this->waitRoomPoliceStack.size(); i++) {
-		if (this->waitRoomPoliceStack.at(i) == _clientId) {
-			this->waitRoomPoliceStack.erase(this->waitRoomPoliceStack.begin() + i);
+	for (std::vector<anyID>::iterator	it = this->waitRoomPoliceStack.begin();
+										it != this->waitRoomPoliceStack.end();
+	) {
+		if (*it == _clientId) {
+			this->waitRoomPoliceStack.erase(it);
+		}
+		else {
+			it++;
 		}
 	}
 }
@@ -51,9 +61,14 @@ void AdminTool::addWaitRoomServerAdminStack(anyID _clientId) {
 	this->waitRoomServerAdminStack.push_back(_clientId);
 }
 void AdminTool::removeWaitRoomServerAdminStack(anyID _clientId) {
-	for (int i = 0; i < this->waitRoomServerAdminStack.size(); i++) {
-		if (this->waitRoomServerAdminStack.at(i) == _clientId) {
-			this->waitRoomServerAdminStack.erase(this->waitRoomServerAdminStack.begin() + i);
+	for (std::vector<anyID>::iterator	it = this->waitRoomServerAdminStack.begin();
+										it != this->waitRoomServerAdminStack.end();
+		) {
+		if (*it == _clientId) {
+			this->waitRoomServerAdminStack.erase(it);
+		}
+		else {
+			it++;
 		}
 	}
 }
