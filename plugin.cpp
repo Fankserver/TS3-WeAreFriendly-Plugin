@@ -82,7 +82,7 @@ const char* ts3plugin_name() {
 
 /* Plugin version */
 const char* ts3plugin_version() {
-    return "1.0";
+    return "1.0.1";
 }
 
 /* Plugin API version. Must be the same as the clients API major version, else the plugin fails to load. */
@@ -439,6 +439,10 @@ void ts3plugin_onMenuItemEvent(uint64 serverConnectionHandlerID, enum PluginMenu
 			switch (menuItemID) {
 				case MENU_ID_GLOBAL_WAITROOMLIST: {
 					/* Menu global waitroom list was triggered */
+					anyID *clientList;
+					ts3Functions.getChannelClientList(serverConnectionHandlerID, WAITROOM_CHANNEL_ID, &clientList);
+					adminTool->validateWaitRoomStack(clientList);
+
 					std::ostringstream waitRoomList;
 					std::vector<anyID> waitRoomStock = adminTool->getWaitRoomStack();
 
@@ -469,6 +473,10 @@ void ts3plugin_onMenuItemEvent(uint64 serverConnectionHandlerID, enum PluginMenu
 				}
 				case MENU_ID_GLOBAL_WAITROOMLIST_POLICE: {
 					/* Menu global waitroom list was triggered */
+					anyID *clientList;
+					ts3Functions.getChannelClientList(serverConnectionHandlerID, WAITROOMPOLICE_CHANNEL_ID, &clientList);
+					adminTool->validateWaitRoomPoliceStack(clientList);
+
 					std::ostringstream waitRoomList;
 					std::vector<anyID> waitRoomStock = adminTool->getWaitRoomPoliceStack();
 
@@ -499,6 +507,10 @@ void ts3plugin_onMenuItemEvent(uint64 serverConnectionHandlerID, enum PluginMenu
 				}
 				case MENU_ID_GLOBAL_WAITROOMLIST_SERVERADMIN: {
 					/* Menu global waitroom list was triggered */
+					anyID *clientList;
+					ts3Functions.getChannelClientList(serverConnectionHandlerID, WAITROOMSERVERADMIN_CHANNEL_ID, &clientList);
+					adminTool->validateWaitRoomServerAdminStack(clientList);
+
 					std::ostringstream waitRoomList;
 					std::vector<anyID> waitRoomStock = adminTool->getWaitRoomServerAdminStack();
 
