@@ -29,7 +29,7 @@ void AdminTool::addWaitRoomStack(anyID _clientId) {
 void AdminTool::removeWaitRoomStack(anyID _clientId) {
 	for (std::vector<anyID>::iterator	it = this->waitRoomStack.begin();
 										it != this->waitRoomStack.end();
-		) {
+	) {
 		if (*it == _clientId) {
 			this->waitRoomStack.erase(it);
 		}
@@ -56,16 +56,16 @@ void AdminTool::validateWaitRoomStack(anyID *_clientList) {
 	// remove duplicate/wrong clients
 	for (std::vector<anyID>::iterator	it = this->waitRoomStack.begin();
 		it != this->waitRoomStack.end();
-		) {
-		if (foundClients[*it] == NULL) {
+	) {
+		if (foundClients[*it] != NULL) {
 			this->waitRoomStack.erase(it);
 			if (this->debug) { printf("Duplicate: %d\n", *it); };
 		}
 		else {
-			if (activeClients[*it] == NULL) {
+			if (activeClients[*it] != NULL) {
 				foundClients[*it] = true;
-				it++;
 				if (this->debug) { printf("Found: %d\n", *it); };
+				it++;
 			}
 			else {
 				this->waitRoomStack.erase(it);
@@ -77,7 +77,7 @@ void AdminTool::validateWaitRoomStack(anyID *_clientList) {
 	// add missing clients
 	for (std::map<anyID, bool>::iterator	it = activeClients.begin();
 		it != activeClients.end();
-		) {
+	) {
 		if (foundClients[it->first] == NULL) {
 			this->waitRoomStack.push_back(it->first);
 			foundClients[it->first] = true;
@@ -120,16 +120,16 @@ void AdminTool::validateWaitRoomPoliceStack(anyID *_clientList) {
 	// remove duplicate/wrong clients
 	for (std::vector<anyID>::iterator	it = this->waitRoomPoliceStack.begin();
 		it != this->waitRoomPoliceStack.end();
-		) {
-		if (foundClients[*it] == NULL) {
+	) {
+		if (foundClients[*it] != NULL) {
 			this->waitRoomPoliceStack.erase(it);
 			if (this->debug) { printf("Duplicate: %d\n", *it); };
 		}
 		else {
-			if (activeClients[*it] == NULL) {
+			if (activeClients[*it] != NULL) {
 				foundClients[*it] = true;
-				it++;
 				if (this->debug) { printf("Found: %d\n", *it); };
+				it++;
 			}
 			else {
 				this->waitRoomPoliceStack.erase(it);
@@ -141,7 +141,7 @@ void AdminTool::validateWaitRoomPoliceStack(anyID *_clientList) {
 	// add missing clients
 	for (std::map<anyID, bool>::iterator	it = activeClients.begin();
 		it != activeClients.end();
-		) {
+	) {
 		if (foundClients[it->first] == NULL) {
 			this->waitRoomPoliceStack.push_back(it->first);
 			foundClients[it->first] = true;
@@ -157,7 +157,7 @@ void AdminTool::addWaitRoomServerAdminStack(anyID _clientId) {
 void AdminTool::removeWaitRoomServerAdminStack(anyID _clientId) {
 	for (std::vector<anyID>::iterator	it = this->waitRoomServerAdminStack.begin();
 										it != this->waitRoomServerAdminStack.end();
-		) {
+	) {
 		if (*it == _clientId) {
 			this->waitRoomServerAdminStack.erase(it);
 		}
@@ -185,15 +185,15 @@ void AdminTool::validateWaitRoomServerAdminStack(anyID *_clientList) {
 	for (std::vector<anyID>::iterator	it = this->waitRoomServerAdminStack.begin();
 										it != this->waitRoomServerAdminStack.end();
 	) {
-		if (foundClients[*it] == NULL) {
+		if (foundClients[*it] != NULL) {
 			this->waitRoomServerAdminStack.erase(it);
 			if (this->debug) { printf("Duplicate: %d\n", *it); };
 		}
 		else {
-			if (activeClients[*it] == NULL) {
+			if (activeClients[*it] != NULL) {
 				foundClients[*it] = true;
-				it++;
 				if (this->debug) { printf("Found: %d\n", *it); };
+				it++;
 			}
 			else {
 				this->waitRoomServerAdminStack.erase(it);
