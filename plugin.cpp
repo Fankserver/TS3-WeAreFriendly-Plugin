@@ -1,4 +1,4 @@
-/*
+ï»¿/*
  * TeamSpeak 3 We are friendly Plugin
  *
  * Copyright (c) 2014 Fankserver
@@ -29,7 +29,7 @@ static struct TS3Functions ts3Functions;
 #define _strcpy(dest, destSize, src) { strncpy(dest, src, destSize-1); (dest)[destSize-1] = '\0'; }
 #endif
 
-#define PLUGIN_API_VERSION 19
+#define PLUGIN_API_VERSION 20
 
 #define PATH_BUFSIZE 512
 #define COMMAND_BUFSIZE 128
@@ -41,22 +41,10 @@ static struct TS3Functions ts3Functions;
 static char* pluginID = NULL;
 
 #define WAITROOM_CHANNEL_ID 123
-#define WAITROOMPOLICE_CHANNEL_ID 441
+#define WAITROOMWHITELIST_CHANNEL_ID 441
 #define WAITROOMSERVERADMIN_CHANNEL_ID 419
+#define WAITROOMPOLICE_CHANNEL_ID 612
 static AdminTool *adminTool;
-
-#ifdef _WIN32
-/* Helper function to convert wchar_T to Utf-8 encoded strings on Windows */
-static int wcharToUtf8(const wchar_t* str, char** result) {
-	int outlen = WideCharToMultiByte(CP_UTF8, 0, str, -1, 0, 0, 0, 0);
-	*result = (char*)malloc(outlen);
-	if(WideCharToMultiByte(CP_UTF8, 0, str, -1, *result, outlen, 0, 0) == 0) {
-		*result = NULL;
-		return -1;
-	}
-	return 0;
-}
-#endif
 
 /*********************************** Required functions ************************************/
 /*
@@ -65,24 +53,12 @@ static int wcharToUtf8(const wchar_t* str, char** result) {
 
 /* Unique name identifying this plugin */
 const char* ts3plugin_name() {
-#ifdef _WIN32
-	/* TeamSpeak expects UTF-8 encoded characters. Following demonstrates a possibility how to convert UTF-16 wchar_t into UTF-8. */
-	static char* result = NULL;  /* Static variable so it's allocated only once */
-	if(!result) {
-		const wchar_t* name = L"We are friendly Plugin";
-		if(wcharToUtf8(name, &result) == -1) {  /* Convert name into UTF-8 encoded result */
-			result = "We are friendly Plugin";  /* Conversion failed, fallback here */
-		}
-	}
-	return result;
-#else
 	return "We are friendly Plugin";
-#endif
 }
 
 /* Plugin version */
 const char* ts3plugin_version() {
-    return "1.0.1.1";
+    return "1.0.2";
 }
 
 /* Plugin API version. Must be the same as the clients API major version, else the plugin fails to load. */
@@ -92,13 +68,11 @@ int ts3plugin_apiVersion() {
 
 /* Plugin author */
 const char* ts3plugin_author() {
-	/* If you want to use wchar_t, see ts3plugin_name() on how to use */
     return "Fankserver";
 }
 
 /* Plugin description */
 const char* ts3plugin_description() {
-	/* If you want to use wchar_t, see ts3plugin_name() on how to use */
     return "This plugin is designed for the We are friendly Community";
 }
 
@@ -267,8 +241,9 @@ static struct PluginMenuItem* createMenuItem(enum PluginMenuType type, int id, c
 enum {
 	MENU_ID_CLIENT_INGAMENICKNAMES = 1,
 	MENU_ID_GLOBAL_WAITROOMLIST,
-	MENU_ID_GLOBAL_WAITROOMLIST_POLICE,
-	MENU_ID_GLOBAL_WAITROOMLIST_SERVERADMIN
+	MENU_ID_GLOBAL_WAITROOMLIST_WHITELIST,
+	MENU_ID_GLOBAL_WAITROOMLIST_SERVERADMIN,
+	MENU_ID_GLOBAL_WAITROOMLIST_POLICE
 };
 
 /*
@@ -296,10 +271,11 @@ void ts3plugin_initMenus(struct PluginMenuItem*** menuItems, char** menuIcon) {
 	 */
 
 	BEGIN_CREATE_MENUS(4);  /* IMPORTANT: Number of menu items must be correct! */
-	CREATE_MENU_ITEM(PLUGIN_MENU_TYPE_CLIENT, MENU_ID_CLIENT_INGAMENICKNAMES, "InGame Nicknames", "icons/ident.png");
-	CREATE_MENU_ITEM(PLUGIN_MENU_TYPE_GLOBAL, MENU_ID_GLOBAL_WAITROOMLIST, "Wartezimmer Priorität", "icons/list.png");
-	CREATE_MENU_ITEM(PLUGIN_MENU_TYPE_GLOBAL, MENU_ID_GLOBAL_WAITROOMLIST_POLICE, "Wartezimmer Polizei Priorität", "icons/list.png");
-	CREATE_MENU_ITEM(PLUGIN_MENU_TYPE_GLOBAL, MENU_ID_GLOBAL_WAITROOMLIST_SERVERADMIN, "Wartezimmer ServerAdmin Priorität", "icons/list.png");
+	//CREATE_MENU_ITEM(PLUGIN_MENU_TYPE_CLIENT, MENU_ID_CLIENT_INGAMENICKNAMES, "InGame Nicknames", "icons/ident.png");
+	CREATE_MENU_ITEM(PLUGIN_MENU_TYPE_GLOBAL, MENU_ID_GLOBAL_WAITROOMLIST, "Wartezimmer Prioriaet", "icons/list.png");
+	CREATE_MENU_ITEM(PLUGIN_MENU_TYPE_GLOBAL, MENU_ID_GLOBAL_WAITROOMLIST_WHITELIST, "Wartezimmer Whitelist Prioritaet", "icons/list.png");
+	CREATE_MENU_ITEM(PLUGIN_MENU_TYPE_GLOBAL, MENU_ID_GLOBAL_WAITROOMLIST_SERVERADMIN, "Wartezimmer ServerAdmin Prioritaet", "icons/list.png");
+	CREATE_MENU_ITEM(PLUGIN_MENU_TYPE_GLOBAL, MENU_ID_GLOBAL_WAITROOMLIST_POLICE, "Wartezimmer Polizei Prioritaet", "icons/list.png");
 	END_CREATE_MENUS;  /* Includes an assert checking if the number of menu items matched */
 
 	/*
@@ -365,12 +341,12 @@ void ts3plugin_onClientMoveEvent(uint64 serverConnectionHandlerID, anyID clientI
 		adminTool->removeWaitRoomStack(clientID);
 	}
 
-	// Add/remove clients for waitroom police
-	if (newChannelID == WAITROOMPOLICE_CHANNEL_ID) {
-		adminTool->addWaitRoomPoliceStack(clientID);
+	// Add/remove clients for waitroom whitelist
+	if (newChannelID == WAITROOMWHITELIST_CHANNEL_ID) {
+		adminTool->addWaitRoomWhitelistStack(clientID);
 	}
-	if (oldChannelID == WAITROOMPOLICE_CHANNEL_ID) {
-		adminTool->removeWaitRoomPoliceStack(clientID);
+	if (oldChannelID == WAITROOMWHITELIST_CHANNEL_ID) {
+		adminTool->removeWaitRoomWhitelistStack(clientID);
 	}
 
 	// Add/remove clients for waitroom serveradmin
@@ -379,6 +355,14 @@ void ts3plugin_onClientMoveEvent(uint64 serverConnectionHandlerID, anyID clientI
 	}
 	if (oldChannelID == WAITROOMSERVERADMIN_CHANNEL_ID) {
 		adminTool->removeWaitRoomServerAdminStack(clientID);
+	}
+
+	// Add/remove clients for waitroom police
+	if (newChannelID == WAITROOMPOLICE_CHANNEL_ID) {
+		adminTool->addWaitRoomPoliceStack(clientID);
+	}
+	if (oldChannelID == WAITROOMPOLICE_CHANNEL_ID) {
+		adminTool->removeWaitRoomPoliceStack(clientID);
 	}
 }
 
@@ -396,12 +380,12 @@ void ts3plugin_onClientMoveMovedEvent(uint64 serverConnectionHandlerID, anyID cl
 		adminTool->removeWaitRoomStack(clientID);
 	}
 
-	// Add/remove clients for waitroom police
-	if (newChannelID == WAITROOMPOLICE_CHANNEL_ID) {
-		adminTool->addWaitRoomPoliceStack(clientID);
+	// Add/remove clients for waitroom whitelist
+	if (newChannelID == WAITROOMWHITELIST_CHANNEL_ID) {
+		adminTool->addWaitRoomWhitelistStack(clientID);
 	}
-	if (oldChannelID == WAITROOMPOLICE_CHANNEL_ID) {
-		adminTool->removeWaitRoomPoliceStack(clientID);
+	if (oldChannelID == WAITROOMWHITELIST_CHANNEL_ID) {
+		adminTool->removeWaitRoomWhitelistStack(clientID);
 	}
 
 	// Add/remove clients for waitroom serveradmin
@@ -410,6 +394,14 @@ void ts3plugin_onClientMoveMovedEvent(uint64 serverConnectionHandlerID, anyID cl
 	}
 	if (oldChannelID == WAITROOMSERVERADMIN_CHANNEL_ID) {
 		adminTool->removeWaitRoomServerAdminStack(clientID);
+	}
+
+	// Add/remove clients for waitroom police
+	if (newChannelID == WAITROOMPOLICE_CHANNEL_ID) {
+		adminTool->addWaitRoomPoliceStack(clientID);
+	}
+	if (oldChannelID == WAITROOMPOLICE_CHANNEL_ID) {
+		adminTool->removeWaitRoomPoliceStack(clientID);
 	}
 }
 
@@ -425,7 +417,7 @@ void ts3plugin_onClientMoveMovedEvent(uint64 serverConnectionHandlerID, anyID cl
  * - selectedItemID: Channel or Client ID in the case of PLUGIN_MENU_TYPE_CHANNEL and PLUGIN_MENU_TYPE_CLIENT. 0 for PLUGIN_MENU_TYPE_GLOBAL.
  */
 void ts3plugin_onMenuItemEvent(uint64 serverConnectionHandlerID, enum PluginMenuType type, int menuItemID, uint64 selectedItemID) {
-	char *pluginName = "We are friendly Plugin";
+	char *pluginName = "PLUGIN_NAME";
 	strstr((const char *)pluginName, ts3plugin_name());
 
 	// only execute on We are friendly TeamSpeak
@@ -438,7 +430,6 @@ void ts3plugin_onMenuItemEvent(uint64 serverConnectionHandlerID, enum PluginMenu
 			/* Global menu item was triggered. selectedItemID is unused and set to zero. */
 			switch (menuItemID) {
 				case MENU_ID_GLOBAL_WAITROOMLIST: {
-					/* Menu global waitroom list was triggered */
 					anyID *clientList;
 					ts3Functions.getChannelClientList(serverConnectionHandlerID, WAITROOM_CHANNEL_ID, &clientList);
 					adminTool->validateWaitRoomStack(clientList);
@@ -471,8 +462,41 @@ void ts3plugin_onMenuItemEvent(uint64 serverConnectionHandlerID, enum PluginMenu
 
 					break;
 				}
+				case MENU_ID_GLOBAL_WAITROOMLIST_WHITELIST: {
+					anyID *clientList;
+					ts3Functions.getChannelClientList(serverConnectionHandlerID, WAITROOMWHITELIST_CHANNEL_ID, &clientList);
+					adminTool->validateWaitRoomWhitelistStack(clientList);
+					ts3Functions.freeMemory(clientList);
+
+					std::ostringstream waitRoomList;
+					std::vector<anyID> waitRoomStock = adminTool->getWaitRoomWhitelistStack();
+
+					waitRoomList << "\n";
+
+					// build priority list
+					for (int i = 0; i < waitRoomStock.size(); i++) {
+						char *clientNickname;
+						if (ts3Functions.getClientVariableAsString(serverConnectionHandlerID, waitRoomStock[i], CLIENT_NICKNAME, &clientNickname) != ERROR_ok) {
+							strstr(clientNickname, "FEHLER");
+						}
+						waitRoomList << "" << (i + 1) << ". " << clientNickname << "\n";
+					}
+
+					// get own client id
+					anyID clientId;
+					if (ts3Functions.getClientID(serverConnectionHandlerID, &clientId) != ERROR_ok) {
+						ts3Functions.logMessage("Error getClientID", LogLevel_ERROR, pluginName, serverConnectionHandlerID);
+					}
+					else {
+						// show me the list
+						if (ts3Functions.requestSendPrivateTextMsg(serverConnectionHandlerID, waitRoomList.str().c_str(), clientId, NULL) != ERROR_ok) {
+							ts3Functions.logMessage("Error requestSendPrivateTextMsg", LogLevel_ERROR, pluginName, serverConnectionHandlerID);
+						}
+					}
+
+					break;
+				}
 				case MENU_ID_GLOBAL_WAITROOMLIST_POLICE: {
-					/* Menu global waitroom list was triggered */
 					anyID *clientList;
 					ts3Functions.getChannelClientList(serverConnectionHandlerID, WAITROOMPOLICE_CHANNEL_ID, &clientList);
 					adminTool->validateWaitRoomPoliceStack(clientList);
@@ -506,7 +530,6 @@ void ts3plugin_onMenuItemEvent(uint64 serverConnectionHandlerID, enum PluginMenu
 					break;
 				}
 				case MENU_ID_GLOBAL_WAITROOMLIST_SERVERADMIN: {
-					/* Menu global waitroom list was triggered */
 					anyID *clientList;
 					ts3Functions.getChannelClientList(serverConnectionHandlerID, WAITROOMSERVERADMIN_CHANNEL_ID, &clientList);
 					adminTool->validateWaitRoomServerAdminStack(clientList);

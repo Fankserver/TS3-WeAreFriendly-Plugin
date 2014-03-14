@@ -10,6 +10,9 @@ AdminTool::~AdminTool() {
 void AdminTool::setDebug(bool _debug) {
 	this->debug = _debug;
 }
+bool AdminTool::getDebug() {
+	return this->debug;
+}
 
 void AdminTool::setServer(uint64 _serverConnectionHandlerID) {
 	this->serverConnectionHandlerID = _serverConnectionHandlerID;
@@ -80,6 +83,70 @@ void AdminTool::validateWaitRoomStack(anyID *_clientList) {
 	) {
 		if (foundClients[it->first] == NULL) {
 			this->waitRoomStack.push_back(it->first);
+			foundClients[it->first] = true;
+			if (this->debug) { printf("Added: %d\n", it->first); };
+		}
+		it++;
+	}
+}
+
+void AdminTool::addWaitRoomWhitelistStack(anyID _clientId) {
+	this->waitRoomWhitelistStack.push_back(_clientId);
+}
+void AdminTool::removeWaitRoomWhitelistStack(anyID _clientId) {
+	for (std::vector<anyID>::iterator	it = this->waitRoomWhitelistStack.begin();
+		it != this->waitRoomWhitelistStack.end();
+		) {
+		if (*it == _clientId) {
+			this->waitRoomWhitelistStack.erase(it);
+		}
+		else {
+			it++;
+		}
+	}
+}
+std::vector<anyID> AdminTool::getWaitRoomWhitelistStack() {
+	return this->waitRoomWhitelistStack;
+}
+void AdminTool::validateWaitRoomWhitelistStack(anyID *_clientList) {
+	if (this->debug) { printf("validateWaitRoomWhitelistStack()\n"); };
+	std::map<anyID, bool> foundClients;
+	std::map<anyID, bool> activeClients;
+
+	// get active clients
+	anyID *currentClient;
+	for (currentClient = _clientList; *currentClient != (anyID)NULL; currentClient++) {
+		activeClients[*currentClient] = true;
+		if (this->debug) { printf("Active: %d\n", *currentClient); };
+	}
+
+	// remove duplicate/wrong clients
+	for (std::vector<anyID>::iterator	it = this->waitRoomWhitelistStack.begin();
+		it != this->waitRoomWhitelistStack.end();
+		) {
+		if (foundClients[*it] != NULL) {
+			this->waitRoomWhitelistStack.erase(it);
+			if (this->debug) { printf("Duplicate: %d\n", *it); };
+		}
+		else {
+			if (activeClients[*it] != NULL) {
+				foundClients[*it] = true;
+				if (this->debug) { printf("Found: %d\n", *it); };
+				it++;
+			}
+			else {
+				this->waitRoomWhitelistStack.erase(it);
+				if (this->debug) { printf("Unknown: %d\n", *it); };
+			}
+		}
+	}
+
+	// add missing clients
+	for (std::map<anyID, bool>::iterator	it = activeClients.begin();
+		it != activeClients.end();
+		) {
+		if (foundClients[it->first] == NULL) {
+			this->waitRoomWhitelistStack.push_back(it->first);
 			foundClients[it->first] = true;
 			if (this->debug) { printf("Added: %d\n", it->first); };
 		}
