@@ -44,6 +44,9 @@ static char* pluginID = NULL;
 #define WAITROOMWHITELIST_CHANNEL_ID 441
 #define WAITROOMSERVERADMIN_CHANNEL_ID 419
 #define WAITROOMPOLICE_CHANNEL_ID 612
+#define WAITROOM_COMPLETE_CHANNEL_ID 262
+#define WAITROOM_TIMEOUT_CHANNEL_ID 263
+
 static AdminTool *adminTool;
 
 /*********************************** Required functions ************************************/
@@ -58,7 +61,7 @@ const char* ts3plugin_name() {
 
 /* Plugin version */
 const char* ts3plugin_version() {
-    return "1.0.2";
+    return "1.0.3";
 }
 
 /* Plugin API version. Must be the same as the clients API major version, else the plugin fails to load. */
@@ -243,7 +246,9 @@ enum {
 	MENU_ID_GLOBAL_WAITROOMLIST,
 	MENU_ID_GLOBAL_WAITROOMLIST_WHITELIST,
 	MENU_ID_GLOBAL_WAITROOMLIST_SERVERADMIN,
-	MENU_ID_GLOBAL_WAITROOMLIST_POLICE
+	MENU_ID_GLOBAL_WAITROOMLIST_POLICE,
+	MENU_ID_CLIENT_MODERATION_COMPLETE,
+	MENU_ID_CLIENT_MODERATION_TIMEOUT
 };
 
 /*
@@ -270,12 +275,19 @@ void ts3plugin_initMenus(struct PluginMenuItem*** menuItems, char** menuIcon) {
 	 * e.g. for "test_plugin.dll", icon "1.png" is loaded from <TeamSpeak 3 Client install dir>\plugins\test_plugin\1.png
 	 */
 
-	BEGIN_CREATE_MENUS(4);  /* IMPORTANT: Number of menu items must be correct! */
+	BEGIN_CREATE_MENUS(6);  /* IMPORTANT: Number of menu items must be correct! */
+
+	// Client menus
 	//CREATE_MENU_ITEM(PLUGIN_MENU_TYPE_CLIENT, MENU_ID_CLIENT_INGAMENICKNAMES, "InGame Nicknames", "icons/ident.png");
+	CREATE_MENU_ITEM(PLUGIN_MENU_TYPE_CLIENT, MENU_ID_CLIENT_MODERATION_COMPLETE, "Anliegen abgeschlossen", "icons/complete.png");
+	CREATE_MENU_ITEM(PLUGIN_MENU_TYPE_CLIENT, MENU_ID_CLIENT_MODERATION_TIMEOUT, "War zum Mod. gespraech nicht zu erreichen", "icons/timeout.png");
+
+	// Global menus
 	CREATE_MENU_ITEM(PLUGIN_MENU_TYPE_GLOBAL, MENU_ID_GLOBAL_WAITROOMLIST, "Wartezimmer Prioriaet", "icons/list.png");
 	CREATE_MENU_ITEM(PLUGIN_MENU_TYPE_GLOBAL, MENU_ID_GLOBAL_WAITROOMLIST_WHITELIST, "Wartezimmer Whitelist Prioritaet", "icons/list.png");
 	CREATE_MENU_ITEM(PLUGIN_MENU_TYPE_GLOBAL, MENU_ID_GLOBAL_WAITROOMLIST_SERVERADMIN, "Wartezimmer ServerAdmin Prioritaet", "icons/list.png");
 	CREATE_MENU_ITEM(PLUGIN_MENU_TYPE_GLOBAL, MENU_ID_GLOBAL_WAITROOMLIST_POLICE, "Wartezimmer Polizei Prioritaet", "icons/list.png");
+
 	END_CREATE_MENUS;  /* Includes an assert checking if the number of menu items matched */
 
 	/*
@@ -567,9 +579,9 @@ void ts3plugin_onMenuItemEvent(uint64 serverConnectionHandlerID, enum PluginMenu
 				}
 			}
 			break;
-		case PLUGIN_MENU_TYPE_CLIENT:
+		case PLUGIN_MENU_TYPE_CLIENT: {
 			/* Client contextmenu item was triggered. selectedItemID is the clientID of the selected client */
-			switch(menuItemID) {
+			switch (menuItemID) {
 				case MENU_ID_CLIENT_INGAMENICKNAMES: {
 					/* Menu client InGame Nicknames was triggered */
 					char *clientUID = NULL;
@@ -583,7 +595,7 @@ void ts3plugin_onMenuItemEvent(uint64 serverConnectionHandlerID, enum PluginMenu
 						CURL *curl;
 						CURLcode res;
 						curl = curl_easy_init();
-						
+
 						// CURL init success
 						if (curl) {
 							// build url
@@ -592,12 +604,12 @@ void ts3plugin_onMenuItemEvent(uint64 serverConnectionHandlerID, enum PluginMenu
 							requestUrl = urlDecode(requestUrl);
 							requestUrl = "http://www.fankserver.com/request/ts3/" + requestUrl;
 							curl_easy_setopt(curl, CURLOPT_URL, requestUrl.c_str());
-						
+
 							// catch response
 							std::string response;
 							curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_to_string);
 							curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
-						
+
 							// perform & cleanup
 							res = curl_easy_perform(curl);
 							curl_easy_cleanup(curl);
@@ -612,10 +624,24 @@ void ts3plugin_onMenuItemEvent(uint64 serverConnectionHandlerID, enum PluginMenu
 					ts3Functions.freeMemory(clientUID);
 					break;
 				}
-				default:
+				case MENU_ID_CLIENT_MODERATION_COMPLETE: {
+					if (ts3Functions.requestClientMove(serverConnectionHandlerID, (anyID)selectedItemID, WAITROOM_COMPLETE_CHANNEL_ID, "", NULL) != ERROR_ok) {
+
+					}
 					break;
+				}
+				case MENU_ID_CLIENT_MODERATION_TIMEOUT: {
+					if (ts3Functions.requestClientMove(serverConnectionHandlerID, (anyID)selectedItemID, WAITROOM_TIMEOUT_CHANNEL_ID, "", NULL) != ERROR_ok) {
+
+					}
+					break;
+				}
+				default: {
+					break;
+				}
 			}
 			break;
+		}
 		default:
 			break;
 	}
