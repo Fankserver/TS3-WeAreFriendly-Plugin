@@ -98,6 +98,7 @@ void AdminTool::validateWaitRoomStack(anyID *_clientList) {
 			// client found
 			if (clientActive) {
 				if (this->debug) { printf("Found: %d\n", *waitRoomClient); };
+				foundClients.push_back(*waitRoomClient);
 				waitRoomClient++;
 			}
 
@@ -209,6 +210,7 @@ void AdminTool::validateWaitRoomWhitelistStack(anyID *_clientList) {
 			// client found
 			if (clientActive) {
 				if (this->debug) { printf("Found: %d\n", *waitRoomClient); };
+				foundClients.push_back(*waitRoomClient);
 				waitRoomClient++;
 			}
 
@@ -320,6 +322,7 @@ void AdminTool::validateWaitRoomPoliceStack(anyID *_clientList) {
 			// client found
 			if (clientActive) {
 				if (this->debug) { printf("Found: %d\n", *waitRoomClient); };
+				foundClients.push_back(*waitRoomClient);
 				waitRoomClient++;
 			}
 
@@ -431,6 +434,7 @@ void AdminTool::validateWaitRoomServerAdminStack(anyID *_clientList) {
 			// client found
 			if (clientActive) {
 				if (this->debug) { printf("Found: %d\n", *waitRoomClient); };
+				foundClients.push_back(*waitRoomClient);
 				waitRoomClient++;
 			}
 
