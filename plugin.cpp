@@ -61,7 +61,7 @@ const char* ts3plugin_name() {
 
 /* Plugin version */
 const char* ts3plugin_version() {
-    return "1.0.3";
+    return "1.0.4";
 }
 
 /* Plugin API version. Must be the same as the clients API major version, else the plugin fails to load. */
@@ -274,7 +274,6 @@ void ts3plugin_initMenus(struct PluginMenuItem*** menuItems, char** menuIcon) {
 	 * plugin filename, without dll/so/dylib suffix
 	 * e.g. for "test_plugin.dll", icon "1.png" is loaded from <TeamSpeak 3 Client install dir>\plugins\test_plugin\1.png
 	 */
-
 	BEGIN_CREATE_MENUS(6);  /* IMPORTANT: Number of menu items must be correct! */
 
 	// Client menus
@@ -442,137 +441,143 @@ void ts3plugin_onMenuItemEvent(uint64 serverConnectionHandlerID, enum PluginMenu
 			/* Global menu item was triggered. selectedItemID is unused and set to zero. */
 			switch (menuItemID) {
 				case MENU_ID_GLOBAL_WAITROOMLIST: {
-					anyID *clientList;
-					ts3Functions.getChannelClientList(serverConnectionHandlerID, WAITROOM_CHANNEL_ID, &clientList);
-					adminTool->validateWaitRoomStack(clientList);
+					char *channelName;
 
-					std::ostringstream waitRoomList;
-					std::vector<anyID> waitRoomStock = adminTool->getWaitRoomStack();
+					// get channel name
+					if (ts3Functions.getChannelVariableAsString(serverConnectionHandlerID, WAITROOM_CHANNEL_ID, CHANNEL_NAME, &channelName) == ERROR_ok) {
+						anyID *clientList;
 
-					waitRoomList << "\n";
+						// get all clients in channel
+						if (ts3Functions.getChannelClientList(serverConnectionHandlerID, WAITROOM_CHANNEL_ID, &clientList) == ERROR_ok) {
+							adminTool->validateWaitRoomStack(clientList);
+							ts3Functions.freeMemory(clientList);
+						};
 
-					// build priority list
-					for (int i = 0; i < waitRoomStock.size(); i++) {
-						char *clientNickname;
-						if (ts3Functions.getClientVariableAsString(serverConnectionHandlerID, waitRoomStock[i], CLIENT_NICKNAME, &clientNickname) != ERROR_ok) {
-							strstr(clientNickname, "FEHLER");
+						std::wstringstream waitRoomList;
+						std::wstringstream waitRoomName;
+						std::vector<anyID> waitRoomStock = adminTool->getWaitRoomStack();
+
+						// create dialog title
+						waitRoomName << channelName << " Priorität";
+
+						// build priority list
+						for (int i = 0; i < waitRoomStock.size(); i++) {
+							char *clientNickname;
+							if (ts3Functions.getClientVariableAsString(serverConnectionHandlerID, waitRoomStock[i], CLIENT_NICKNAME, &clientNickname) == ERROR_ok) {
+								waitRoomList << "" << (i + 1) << ". " << clientNickname << "\n";
+							}
 						}
-						waitRoomList << "" << (i + 1) << ". " << clientNickname << "\n";
-					}
 
-					// get own client id
-					anyID clientId;
-					if (ts3Functions.getClientID(serverConnectionHandlerID, &clientId) != ERROR_ok) {
-						ts3Functions.logMessage("Error getClientID", LogLevel_ERROR, pluginName, serverConnectionHandlerID);
-					}
-					else {
-						// show me the list
-						if (ts3Functions.requestSendPrivateTextMsg(serverConnectionHandlerID, waitRoomList.str().c_str(), clientId, NULL) != ERROR_ok) {
-							ts3Functions.logMessage("Error requestSendPrivateTextMsg", LogLevel_ERROR, pluginName, serverConnectionHandlerID);
-						}
-					}
+						// show dialog
+						int nResult = MessageBox(NULL, waitRoomList.str().c_str(), waitRoomName.str().c_str(), MB_ICONINFORMATION | MB_OK);
 
+						ts3Functions.freeMemory(channelName);
+					}
 					break;
 				}
 				case MENU_ID_GLOBAL_WAITROOMLIST_WHITELIST: {
-					anyID *clientList;
-					ts3Functions.getChannelClientList(serverConnectionHandlerID, WAITROOMWHITELIST_CHANNEL_ID, &clientList);
-					adminTool->validateWaitRoomWhitelistStack(clientList);
-					ts3Functions.freeMemory(clientList);
+					char *channelName;
 
-					std::ostringstream waitRoomList;
-					std::vector<anyID> waitRoomStock = adminTool->getWaitRoomWhitelistStack();
+					// get channel name
+					if (ts3Functions.getChannelVariableAsString(serverConnectionHandlerID, WAITROOMWHITELIST_CHANNEL_ID, CHANNEL_NAME, &channelName) == ERROR_ok) {
+						anyID *clientList;
 
-					waitRoomList << "\n";
+						// get all clients in channel
+						if (ts3Functions.getChannelClientList(serverConnectionHandlerID, WAITROOMWHITELIST_CHANNEL_ID, &clientList) == ERROR_ok) {
+							adminTool->validateWaitRoomWhitelistStack(clientList);
+							ts3Functions.freeMemory(clientList);
+						};
 
-					// build priority list
-					for (int i = 0; i < waitRoomStock.size(); i++) {
-						char *clientNickname;
-						if (ts3Functions.getClientVariableAsString(serverConnectionHandlerID, waitRoomStock[i], CLIENT_NICKNAME, &clientNickname) != ERROR_ok) {
-							strstr(clientNickname, "FEHLER");
+						std::wstringstream waitRoomList;
+						std::wstringstream waitRoomName;
+						std::vector<anyID> waitRoomStock = adminTool->getWaitRoomWhitelistStack();
+
+						// create dialog title
+						waitRoomName << channelName << " Priorität";
+
+						// build priority list
+						for (int i = 0; i < waitRoomStock.size(); i++) {
+							char *clientNickname;
+							if (ts3Functions.getClientVariableAsString(serverConnectionHandlerID, waitRoomStock[i], CLIENT_NICKNAME, &clientNickname) == ERROR_ok) {
+								waitRoomList << "" << (i + 1) << ". " << clientNickname << "\n";
+							}
 						}
-						waitRoomList << "" << (i + 1) << ". " << clientNickname << "\n";
-					}
 
-					// get own client id
-					anyID clientId;
-					if (ts3Functions.getClientID(serverConnectionHandlerID, &clientId) != ERROR_ok) {
-						ts3Functions.logMessage("Error getClientID", LogLevel_ERROR, pluginName, serverConnectionHandlerID);
-					}
-					else {
-						// show me the list
-						if (ts3Functions.requestSendPrivateTextMsg(serverConnectionHandlerID, waitRoomList.str().c_str(), clientId, NULL) != ERROR_ok) {
-							ts3Functions.logMessage("Error requestSendPrivateTextMsg", LogLevel_ERROR, pluginName, serverConnectionHandlerID);
-						}
-					}
+						// show dialog
+						int nResult = MessageBox(NULL, waitRoomList.str().c_str(), waitRoomName.str().c_str(), MB_ICONINFORMATION | MB_OK);
 
+						ts3Functions.freeMemory(channelName);
+					}
 					break;
 				}
 				case MENU_ID_GLOBAL_WAITROOMLIST_POLICE: {
-					anyID *clientList;
-					ts3Functions.getChannelClientList(serverConnectionHandlerID, WAITROOMPOLICE_CHANNEL_ID, &clientList);
-					adminTool->validateWaitRoomPoliceStack(clientList);
+					char *channelName;
 
-					std::ostringstream waitRoomList;
-					std::vector<anyID> waitRoomStock = adminTool->getWaitRoomPoliceStack();
+					// get channel name
+					if (ts3Functions.getChannelVariableAsString(serverConnectionHandlerID, WAITROOMPOLICE_CHANNEL_ID, CHANNEL_NAME, &channelName) == ERROR_ok) {
+						anyID *clientList;
 
-					waitRoomList << "\n";
+						// get all clients in channel
+						if (ts3Functions.getChannelClientList(serverConnectionHandlerID, WAITROOMPOLICE_CHANNEL_ID, &clientList) == ERROR_ok) {
+							adminTool->validateWaitRoomPoliceStack(clientList);
+							ts3Functions.freeMemory(clientList);
+						};
 
-					// build priority list
-					for (int i = 0; i < waitRoomStock.size(); i++) {
-						char *clientNickname;
-						if (ts3Functions.getClientVariableAsString(serverConnectionHandlerID, waitRoomStock[i], CLIENT_NICKNAME, &clientNickname) != ERROR_ok) {
-							strstr(clientNickname, "FEHLER");
+						std::wstringstream waitRoomList;
+						std::wstringstream waitRoomName;
+						std::vector<anyID> waitRoomStock = adminTool->getWaitRoomPoliceStack();
+
+						// create dialog title
+						waitRoomName << channelName << " Priorität";
+
+						// build priority list
+						for (int i = 0; i < waitRoomStock.size(); i++) {
+							char *clientNickname;
+							if (ts3Functions.getClientVariableAsString(serverConnectionHandlerID, waitRoomStock[i], CLIENT_NICKNAME, &clientNickname) == ERROR_ok) {
+								waitRoomList << "" << (i + 1) << ". " << clientNickname << "\n";
+							}
 						}
-						waitRoomList << "" << (i + 1) << ". " << clientNickname << "\n";
-					}
 
-					// get own client id
-					anyID clientId;
-					if (ts3Functions.getClientID(serverConnectionHandlerID, &clientId) != ERROR_ok) {
-						ts3Functions.logMessage("Error getClientID", LogLevel_ERROR, pluginName, serverConnectionHandlerID);
-					}
-					else {
-						// show me the list
-						if (ts3Functions.requestSendPrivateTextMsg(serverConnectionHandlerID, waitRoomList.str().c_str(), clientId, NULL) != ERROR_ok) {
-							ts3Functions.logMessage("Error requestSendPrivateTextMsg", LogLevel_ERROR, pluginName, serverConnectionHandlerID);
-						}
-					}
+						// show dialog
+						int nResult = MessageBox(NULL, waitRoomList.str().c_str(), waitRoomName.str().c_str(), MB_ICONINFORMATION | MB_OK);
 
+						ts3Functions.freeMemory(channelName);
+					}
 					break;
 				}
 				case MENU_ID_GLOBAL_WAITROOMLIST_SERVERADMIN: {
-					anyID *clientList;
-					ts3Functions.getChannelClientList(serverConnectionHandlerID, WAITROOMSERVERADMIN_CHANNEL_ID, &clientList);
-					adminTool->validateWaitRoomServerAdminStack(clientList);
+					char *channelName;
 
-					std::ostringstream waitRoomList;
-					std::vector<anyID> waitRoomStock = adminTool->getWaitRoomServerAdminStack();
+					// get channel name
+					if (ts3Functions.getChannelVariableAsString(serverConnectionHandlerID, WAITROOMSERVERADMIN_CHANNEL_ID, CHANNEL_NAME, &channelName) == ERROR_ok) {
+						anyID *clientList;
 
-					waitRoomList << "\n";
+						// get all clients in channel
+						if (ts3Functions.getChannelClientList(serverConnectionHandlerID, WAITROOMSERVERADMIN_CHANNEL_ID, &clientList) == ERROR_ok) {
+							adminTool->validateWaitRoomServerAdminStack(clientList);
+							ts3Functions.freeMemory(clientList);
+						};
 
-					// build priority list
-					for (int i = 0; i < waitRoomStock.size(); i++) {
-						char *clientNickname;
-						if (ts3Functions.getClientVariableAsString(serverConnectionHandlerID, waitRoomStock[i], CLIENT_NICKNAME, &clientNickname) != ERROR_ok) {
-							strstr(clientNickname, "FEHLER");
+						std::wstringstream waitRoomList;
+						std::wstringstream waitRoomName;
+						std::vector<anyID> waitRoomStock = adminTool->getWaitRoomServerAdminStack();
+
+						// create dialog title
+						waitRoomName << channelName << " Priorität";
+
+						// build priority list
+						for (int i = 0; i < waitRoomStock.size(); i++) {
+							char *clientNickname;
+							if (ts3Functions.getClientVariableAsString(serverConnectionHandlerID, waitRoomStock[i], CLIENT_NICKNAME, &clientNickname) == ERROR_ok) {
+								waitRoomList << "" << (i + 1) << ". " << clientNickname << "\n";
+							}
 						}
-						waitRoomList << "" << (i + 1) << ". " << clientNickname << "\n";
-					}
 
-					// get own client id
-					anyID clientId;
-					if (ts3Functions.getClientID(serverConnectionHandlerID, &clientId) != ERROR_ok) {
-						ts3Functions.logMessage("Error getClientID", LogLevel_ERROR, pluginName, serverConnectionHandlerID);
-					}
-					else {
-						// show me the list
-						if (ts3Functions.requestSendPrivateTextMsg(serverConnectionHandlerID, waitRoomList.str().c_str(), clientId, NULL) != ERROR_ok) {
-							ts3Functions.logMessage("Error requestSendPrivateTextMsg", LogLevel_ERROR, pluginName, serverConnectionHandlerID);
-						}
-					}
+						// show dialog
+						int nResult = MessageBox(NULL, waitRoomList.str().c_str(), waitRoomName.str().c_str(), MB_ICONINFORMATION | MB_OK);
 
-					break;
+						ts3Functions.freeMemory(channelName);
+					}
 				}
 				default: {
 					break;
@@ -625,14 +630,28 @@ void ts3plugin_onMenuItemEvent(uint64 serverConnectionHandlerID, enum PluginMenu
 					break;
 				}
 				case MENU_ID_CLIENT_MODERATION_COMPLETE: {
-					if (ts3Functions.requestClientMove(serverConnectionHandlerID, (anyID)selectedItemID, WAITROOM_COMPLETE_CHANNEL_ID, "", NULL) != ERROR_ok) {
-
+					// move client in complete room
+					int errorCode;
+					if ((errorCode = ts3Functions.requestClientMove(serverConnectionHandlerID, (anyID)selectedItemID, WAITROOM_COMPLETE_CHANNEL_ID, "", NULL)) != ERROR_ok) {
+						char *errorMessage;
+						if (ts3Functions.getErrorMessage(errorCode, &errorMessage)) {
+							ts3Functions.logMessage("Error requestClientMove", LogLevel_WARNING, "We Are Friendly Plugin", 0);
+							ts3Functions.logMessage(errorMessage, LogLevel_WARNING, "We Are Friendly Plugin", 0);
+							ts3Functions.freeMemory(errorMessage);
+						}
 					}
 					break;
 				}
 				case MENU_ID_CLIENT_MODERATION_TIMEOUT: {
-					if (ts3Functions.requestClientMove(serverConnectionHandlerID, (anyID)selectedItemID, WAITROOM_TIMEOUT_CHANNEL_ID, "", NULL) != ERROR_ok) {
-
+					// move client in not reachable room
+					int errorCode;
+					if ((errorCode = ts3Functions.requestClientMove(serverConnectionHandlerID, (anyID)selectedItemID, WAITROOM_TIMEOUT_CHANNEL_ID, "", NULL)) != ERROR_ok) {
+						char *errorMessage;
+						if (ts3Functions.getErrorMessage(errorCode, &errorMessage)) {
+							ts3Functions.logMessage("Error requestClientMove", LogLevel_WARNING, "We Are Friendly Plugin", 0);
+							ts3Functions.logMessage(errorMessage, LogLevel_WARNING, "We Are Friendly Plugin", 0);
+							ts3Functions.freeMemory(errorMessage);
+						}
 					}
 					break;
 				}

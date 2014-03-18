@@ -46,47 +46,94 @@ std::vector<anyID> AdminTool::getWaitRoomStack() {
 }
 void AdminTool::validateWaitRoomStack(anyID *_clientList) {
 	if (this->debug) { printf("validateWaitRoomStack()\n"); };
-	std::map<anyID, bool> foundClients;
-	std::map<anyID, bool> activeClients;
+	std::vector<anyID> foundClients;
+	std::vector<anyID> activeClients;
 
 	// get active clients
 	anyID *currentClient;
 	for (currentClient = _clientList; *currentClient != (anyID)NULL; currentClient++) {
-		activeClients[*currentClient] = true;
+		activeClients.push_back(*currentClient);
 		if (this->debug) { printf("Active: %d\n", *currentClient); };
 	}
 
 	// remove duplicate/wrong clients
-	for (std::vector<anyID>::iterator	it = this->waitRoomStack.begin();
-		it != this->waitRoomStack.end();
+	for (std::vector<anyID>::iterator
+		waitRoomClient = this->waitRoomStack.begin();
+		waitRoomClient != this->waitRoomStack.end();
 	) {
-		if (foundClients[*it] != NULL) {
-			this->waitRoomStack.erase(it);
-			if (this->debug) { printf("Duplicate: %d\n", *it); };
+		bool clientFound = false;
+
+		// find client
+		for (std::vector<anyID>::iterator
+			foundClient = foundClients.begin();
+			foundClient != foundClients.end();
+		) {
+			if (*foundClient == *waitRoomClient) {
+				clientFound = true;
+				break;
+			}
+			foundClient++;
+		}
+
+		// removed if duplicate client
+		if (clientFound) {
+			this->waitRoomStack.erase(waitRoomClient);
+			if (this->debug) { printf("Duplicate: %d\n", *waitRoomClient); };
 		}
 		else {
-			if (activeClients[*it] != NULL) {
-				foundClients[*it] = true;
-				if (this->debug) { printf("Found: %d\n", *it); };
-				it++;
+			bool clientActive = false;
+
+			// find client
+			for (std::vector<anyID>::iterator
+				activeClient = activeClients.begin();
+				activeClient != activeClients.end();
+			) {
+				if (*activeClient == *waitRoomClient) {
+					clientActive = true;
+					break;
+				}
+				activeClient++;
 			}
+
+			// client found
+			if (clientActive) {
+				if (this->debug) { printf("Found: %d\n", *waitRoomClient); };
+				waitRoomClient++;
+			}
+
+			// client not found -> delete
 			else {
-				this->waitRoomStack.erase(it);
-				if (this->debug) { printf("Unknown: %d\n", *it); };
+				this->waitRoomStack.erase(waitRoomClient);
+				if (this->debug) { printf("Unknown: %d\n", *waitRoomClient); };
 			}
 		}
 	}
 
 	// add missing clients
-	for (std::map<anyID, bool>::iterator	it = activeClients.begin();
-		it != activeClients.end();
+	for (std::vector<anyID>::iterator
+		activeClient = activeClients.begin();
+		activeClient != activeClients.end();
 	) {
-		if (foundClients[it->first] == NULL) {
-			this->waitRoomStack.push_back(it->first);
-			foundClients[it->first] = true;
-			if (this->debug) { printf("Added: %d\n", it->first); };
+		bool clientFound = false;
+
+		// find client
+		for (std::vector<anyID>::iterator
+			foundClient = foundClients.begin();
+			foundClient != foundClients.end();
+		) {
+			if (*foundClient == *activeClient) {
+				clientFound = true;
+				break;
+			}
+			foundClient++;
 		}
-		it++;
+
+		// add client if not found
+		if (!clientFound) {
+			this->waitRoomStack.push_back(*activeClient);
+			if (this->debug) { printf("Added: %d\n", *activeClient); };
+		}
+		activeClient++;
 	}
 }
 
@@ -110,47 +157,94 @@ std::vector<anyID> AdminTool::getWaitRoomWhitelistStack() {
 }
 void AdminTool::validateWaitRoomWhitelistStack(anyID *_clientList) {
 	if (this->debug) { printf("validateWaitRoomWhitelistStack()\n"); };
-	std::map<anyID, bool> foundClients;
-	std::map<anyID, bool> activeClients;
+	std::vector<anyID> foundClients;
+	std::vector<anyID> activeClients;
 
 	// get active clients
 	anyID *currentClient;
 	for (currentClient = _clientList; *currentClient != (anyID)NULL; currentClient++) {
-		activeClients[*currentClient] = true;
+		activeClients.push_back(*currentClient);
 		if (this->debug) { printf("Active: %d\n", *currentClient); };
 	}
 
 	// remove duplicate/wrong clients
-	for (std::vector<anyID>::iterator	it = this->waitRoomWhitelistStack.begin();
-		it != this->waitRoomWhitelistStack.end();
+	for (std::vector<anyID>::iterator
+		waitRoomClient = this->waitRoomWhitelistStack.begin();
+		waitRoomClient != this->waitRoomWhitelistStack.end();
+	) {
+		bool clientFound = false;
+
+		// find client
+		for (std::vector<anyID>::iterator
+			foundClient = foundClients.begin();
+			foundClient != foundClients.end();
 		) {
-		if (foundClients[*it] != NULL) {
-			this->waitRoomWhitelistStack.erase(it);
-			if (this->debug) { printf("Duplicate: %d\n", *it); };
+			if (*foundClient == *waitRoomClient) {
+				clientFound = true;
+				break;
+			}
+			foundClient++;
+		}
+
+		// removed if duplicate client
+		if (clientFound) {
+			this->waitRoomWhitelistStack.erase(waitRoomClient);
+			if (this->debug) { printf("Duplicate: %d\n", *waitRoomClient); };
 		}
 		else {
-			if (activeClients[*it] != NULL) {
-				foundClients[*it] = true;
-				if (this->debug) { printf("Found: %d\n", *it); };
-				it++;
+			bool clientActive = false;
+
+			// find client
+			for (std::vector<anyID>::iterator
+				activeClient = activeClients.begin();
+				activeClient != activeClients.end();
+			) {
+				if (*activeClient == *waitRoomClient) {
+					clientActive = true;
+					break;
+				}
+				activeClient++;
 			}
+
+			// client found
+			if (clientActive) {
+				if (this->debug) { printf("Found: %d\n", *waitRoomClient); };
+				waitRoomClient++;
+			}
+
+			// client not found -> delete
 			else {
-				this->waitRoomWhitelistStack.erase(it);
-				if (this->debug) { printf("Unknown: %d\n", *it); };
+				this->waitRoomWhitelistStack.erase(waitRoomClient);
+				if (this->debug) { printf("Unknown: %d\n", *waitRoomClient); };
 			}
 		}
 	}
 
 	// add missing clients
-	for (std::map<anyID, bool>::iterator	it = activeClients.begin();
-		it != activeClients.end();
+	for (std::vector<anyID>::iterator
+		activeClient = activeClients.begin();
+		activeClient != activeClients.end();
+	) {
+		bool clientFound = false;
+
+		// find client
+		for (std::vector<anyID>::iterator
+			foundClient = foundClients.begin();
+			foundClient != foundClients.end();
 		) {
-		if (foundClients[it->first] == NULL) {
-			this->waitRoomWhitelistStack.push_back(it->first);
-			foundClients[it->first] = true;
-			if (this->debug) { printf("Added: %d\n", it->first); };
+			if (*foundClient == *activeClient) {
+				clientFound = true;
+				break;
+			}
+			foundClient++;
 		}
-		it++;
+
+		// add client if not found
+		if (!clientFound) {
+			this->waitRoomWhitelistStack.push_back(*activeClient);
+			if (this->debug) { printf("Added: %d\n", *activeClient); };
+		}
+		activeClient++;
 	}
 }
 
@@ -174,47 +268,94 @@ std::vector<anyID> AdminTool::getWaitRoomPoliceStack() {
 }
 void AdminTool::validateWaitRoomPoliceStack(anyID *_clientList) {
 	if (this->debug) { printf("validateWaitRoomPoliceStack()\n"); };
-	std::map<anyID, bool> foundClients;
-	std::map<anyID, bool> activeClients;
+	std::vector<anyID> foundClients;
+	std::vector<anyID> activeClients;
 
 	// get active clients
 	anyID *currentClient;
 	for (currentClient = _clientList; *currentClient != (anyID)NULL; currentClient++) {
-		activeClients[*currentClient] = true;
+		activeClients.push_back(*currentClient);
 		if (this->debug) { printf("Active: %d\n", *currentClient); };
 	}
 
 	// remove duplicate/wrong clients
-	for (std::vector<anyID>::iterator	it = this->waitRoomPoliceStack.begin();
-		it != this->waitRoomPoliceStack.end();
+	for (std::vector<anyID>::iterator
+		waitRoomClient = this->waitRoomPoliceStack.begin();
+		waitRoomClient != this->waitRoomPoliceStack.end();
 	) {
-		if (foundClients[*it] != NULL) {
-			this->waitRoomPoliceStack.erase(it);
-			if (this->debug) { printf("Duplicate: %d\n", *it); };
+		bool clientFound = false;
+
+		// find client
+		for (std::vector<anyID>::iterator
+			foundClient = foundClients.begin();
+			foundClient != foundClients.end();
+		) {
+			if (*foundClient == *waitRoomClient) {
+				clientFound = true;
+				break;
+			}
+			foundClient++;
+		}
+
+		// removed if duplicate client
+		if (clientFound) {
+			this->waitRoomPoliceStack.erase(waitRoomClient);
+			if (this->debug) { printf("Duplicate: %d\n", *waitRoomClient); };
 		}
 		else {
-			if (activeClients[*it] != NULL) {
-				foundClients[*it] = true;
-				if (this->debug) { printf("Found: %d\n", *it); };
-				it++;
+			bool clientActive = false;
+
+			// find client
+			for (std::vector<anyID>::iterator
+				activeClient = activeClients.begin();
+				activeClient != activeClients.end();
+			) {
+				if (*activeClient == *waitRoomClient) {
+					clientActive = true;
+					break;
+				}
+				activeClient++;
 			}
+
+			// client found
+			if (clientActive) {
+				if (this->debug) { printf("Found: %d\n", *waitRoomClient); };
+				waitRoomClient++;
+			}
+
+			// client not found -> delete
 			else {
-				this->waitRoomPoliceStack.erase(it);
-				if (this->debug) { printf("Unknown: %d\n", *it); };
+				this->waitRoomPoliceStack.erase(waitRoomClient);
+				if (this->debug) { printf("Unknown: %d\n", *waitRoomClient); };
 			}
 		}
 	}
 
 	// add missing clients
-	for (std::map<anyID, bool>::iterator	it = activeClients.begin();
-		it != activeClients.end();
+	for (std::vector<anyID>::iterator
+		activeClient = activeClients.begin();
+		activeClient != activeClients.end();
 	) {
-		if (foundClients[it->first] == NULL) {
-			this->waitRoomPoliceStack.push_back(it->first);
-			foundClients[it->first] = true;
-			if (this->debug) { printf("Added: %d\n", it->first); };
+		bool clientFound = false;
+
+		// find client
+		for (std::vector<anyID>::iterator
+			foundClient = foundClients.begin();
+			foundClient != foundClients.end();
+		) {
+			if (*foundClient == *activeClient) {
+				clientFound = true;
+				break;
+			}
+			foundClient++;
 		}
-		it++;
+
+		// add client if not found
+		if (!clientFound) {
+			this->waitRoomPoliceStack.push_back(*activeClient);
+			if (this->debug) { printf("Added: %d\n", *activeClient); };
+		}
+		activeClient++;
 	}
 }
 
@@ -238,46 +379,93 @@ std::vector<anyID> AdminTool::getWaitRoomServerAdminStack() {
 }
 void AdminTool::validateWaitRoomServerAdminStack(anyID *_clientList) {
 	if (this->debug) { printf("validateWaitRoomServerAdminStack()\n"); };
-	std::map<anyID, bool> foundClients;
-	std::map<anyID, bool> activeClients;
+	std::vector<anyID> foundClients;
+	std::vector<anyID> activeClients;
 
 	// get active clients
 	anyID *currentClient;
 	for (currentClient = _clientList; *currentClient != (anyID)NULL; currentClient++) {
-		activeClients[*currentClient] = true;
+		activeClients.push_back(*currentClient);
 		if (this->debug) { printf("Active: %d\n", *currentClient); };
 	}
 
 	// remove duplicate/wrong clients
-	for (std::vector<anyID>::iterator	it = this->waitRoomServerAdminStack.begin();
-										it != this->waitRoomServerAdminStack.end();
+	for (std::vector<anyID>::iterator
+		waitRoomClient = this->waitRoomServerAdminStack.begin();
+		waitRoomClient != this->waitRoomServerAdminStack.end();
 	) {
-		if (foundClients[*it] != NULL) {
-			this->waitRoomServerAdminStack.erase(it);
-			if (this->debug) { printf("Duplicate: %d\n", *it); };
+		bool clientFound = false;
+
+		// find client
+		for (std::vector<anyID>::iterator
+			foundClient = foundClients.begin();
+			foundClient != foundClients.end();
+		) {
+			if (*foundClient == *waitRoomClient) {
+				clientFound = true;
+				break;
+			}
+			foundClient++;
+		}
+
+		// removed if duplicate client
+		if (clientFound) {
+			this->waitRoomServerAdminStack.erase(waitRoomClient);
+			if (this->debug) { printf("Duplicate: %d\n", *waitRoomClient); };
 		}
 		else {
-			if (activeClients[*it] != NULL) {
-				foundClients[*it] = true;
-				if (this->debug) { printf("Found: %d\n", *it); };
-				it++;
+			bool clientActive = false;
+
+			// find client
+			for (std::vector<anyID>::iterator
+				activeClient = activeClients.begin();
+				activeClient != activeClients.end();
+			) {
+				if (*activeClient == *waitRoomClient) {
+					clientActive = true;
+					break;
+				}
+				activeClient++;
 			}
+
+			// client found
+			if (clientActive) {
+				if (this->debug) { printf("Found: %d\n", *waitRoomClient); };
+				waitRoomClient++;
+			}
+
+			// client not found -> delete
 			else {
-				this->waitRoomServerAdminStack.erase(it);
-				if (this->debug) { printf("Unknown: %d\n", *it); };
+				this->waitRoomServerAdminStack.erase(waitRoomClient);
+				if (this->debug) { printf("Unknown: %d\n", *waitRoomClient); };
 			}
 		}
 	}
 
 	// add missing clients
-	for (std::map<anyID, bool>::iterator	it = activeClients.begin();
-											it != activeClients.end();
+	for (std::vector<anyID>::iterator
+		activeClient = activeClients.begin();
+		activeClient != activeClients.end();
 	) {
-		if (foundClients[it->first] == NULL) {
-			this->waitRoomServerAdminStack.push_back(it->first);
-			foundClients[it->first] = true;
-			if (this->debug) { printf("Added: %d\n", it->first); };
+		bool clientFound = false;
+
+		// find client
+		for (std::vector<anyID>::iterator
+			foundClient = foundClients.begin();
+			foundClient != foundClients.end();
+		) {
+			if (*foundClient == *activeClient) {
+				clientFound = true;
+				break;
+			}
+			foundClient++;
 		}
-		it++;
+
+		// add client if not found
+		if (!clientFound) {
+			this->waitRoomServerAdminStack.push_back(*activeClient);
+			if (this->debug) { printf("Added: %d\n", *activeClient); };
+		}
+		activeClient++;
 	}
 }

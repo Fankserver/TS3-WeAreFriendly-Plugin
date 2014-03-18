@@ -1,6 +1,5 @@
 #include <public_definitions.h>
 #include <vector>
-#include <map>
 
 class AdminTool {
 private:
