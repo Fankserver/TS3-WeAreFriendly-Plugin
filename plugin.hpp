@@ -29,6 +29,7 @@ PLUGINS_EXPORTDLL void ts3plugin_shutdown();
 
 /* Optional functions */
 PLUGINS_EXPORTDLL void ts3plugin_registerPluginID(const char* id);
+PLUGINS_EXPORTDLL const char* ts3plugin_infoTitle();
 PLUGINS_EXPORTDLL void ts3plugin_infoData(uint64 serverConnectionHandlerID, uint64 id, enum PluginItemType type, char** data);
 PLUGINS_EXPORTDLL void ts3plugin_freeMemory(void* data);
 PLUGINS_EXPORTDLL int ts3plugin_requestAutoload();

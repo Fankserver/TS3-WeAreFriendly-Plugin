@@ -61,7 +61,7 @@ const char* ts3plugin_name() {
 
 /* Plugin version */
 const char* ts3plugin_version() {
-    return "1.0.4";
+    return "1.0.5";
 }
 
 /* Plugin API version. Must be the same as the clients API major version, else the plugin fails to load. */
@@ -109,8 +109,8 @@ int ts3plugin_init() {
 	if ((error = ts3Functions.getServerConnectionHandlerList(&serverConnectionHandlers)) != ERROR_ok) {
 		char *errorMessage;
 		if (ts3Functions.getErrorMessage(error, &errorMessage)) {
-			ts3Functions.logMessage("Error getServerConnectionHandlerList", LogLevel_WARNING, "We Are Friendly Plugin", 0);
-			ts3Functions.logMessage(errorMessage, LogLevel_WARNING, "We Are Friendly Plugin", 0);
+			ts3Functions.logMessage("Error getServerConnectionHandlerList", LogLevel_WARNING, ts3plugin_name(), 0);
+			ts3Functions.logMessage(errorMessage, LogLevel_WARNING, ts3plugin_name(), 0);
 			ts3Functions.freeMemory(errorMessage);
 		}
 	}
@@ -120,8 +120,8 @@ int ts3plugin_init() {
 			if ((error = ts3Functions.getServerVariableAsString(*serverConnectionHandler, VIRTUALSERVER_UNIQUE_IDENTIFIER, &serverUID)) != ERROR_ok) {
 				char *errorMessage;
 				if (ts3Functions.getErrorMessage(error, &errorMessage)) {
-					ts3Functions.logMessage("Error getServerVariableAsString", LogLevel_WARNING, "We Are Friendly Plugin", 0);
-					ts3Functions.logMessage(errorMessage, LogLevel_WARNING, "We Are Friendly Plugin", 0);
+					ts3Functions.logMessage("Error getServerVariableAsString", LogLevel_WARNING, ts3plugin_name(), 0);
+					ts3Functions.logMessage(errorMessage, LogLevel_WARNING, ts3plugin_name(), 0);
 					ts3Functions.freeMemory(errorMessage);
 				}
 			}
@@ -168,43 +168,49 @@ void ts3plugin_registerPluginID(const char* id) {
 }
 
 /*
+* Implement the following three functions when the plugin should display a line in the server/channel/client info.
+* If any of ts3plugin_infoTitle, ts3plugin_infoData or ts3plugin_freeMemory is missing, the info text will not be displayed.
+*/
+
+/* Static title shown in the left column in the info frame */
+const char* ts3plugin_infoTitle() {
+	return "WAF info";
+}
+
+/*
  * Dynamic content shown in the right column in the info frame. Memory for the data string needs to be allocated in this
  * function. The client will call ts3plugin_freeMemory once done with the string to release the allocated memory again.
  * Check the parameter "type" if you want to implement this feature only for specific item types. Set the parameter
  * "data" to NULL to have the client ignore the info data.
  */
 void ts3plugin_infoData(uint64 serverConnectionHandlerID, uint64 id, enum PluginItemType type, char** data) {
-	char* name;
-
-	/* For demonstration purpose, display the name of the currently selected server, channel or client. */
 	switch(type) {
-		case PLUGIN_SERVER:
-			if(ts3Functions.getServerVariableAsString(serverConnectionHandlerID, VIRTUALSERVER_NAME, &name) != ERROR_ok) {
-				printf("Error getting virtual server name\n");
+		case PLUGIN_SERVER: {
+			return;
+		}
+		case PLUGIN_CHANNEL: {
+			return;
+		}
+		case PLUGIN_CLIENT: {
+			char *clientWAFVersion;
+			if (ts3Functions.getClientVariableAsString(serverConnectionHandlerID, (anyID)id, CLIENT_META_DATA, &clientWAFVersion) != ERROR_ok) {
+				printf("Error getting client WAF version\n");
+				data = NULL;
 				return;
 			}
+
+			*data = (char*)malloc(INFODATA_BUFSIZE * sizeof(char));
+			snprintf(*data, INFODATA_BUFSIZE, "Version %s", clientWAFVersion);
+			ts3Functions.freeMemory(clientWAFVersion);
+
 			break;
-		case PLUGIN_CHANNEL:
-			if(ts3Functions.getChannelVariableAsString(serverConnectionHandlerID, id, CHANNEL_NAME, &name) != ERROR_ok) {
-				printf("Error getting channel name\n");
-				return;
-			}
-			break;
-		case PLUGIN_CLIENT:
-			if(ts3Functions.getClientVariableAsString(serverConnectionHandlerID, (anyID)id, CLIENT_NICKNAME, &name) != ERROR_ok) {
-				printf("Error getting client nickname\n");
-				return;
-			}
-			break;
-		default:
+		}
+		default: {
 			printf("Invalid item type: %d\n", type);
 			data = NULL;  /* Ignore */
 			return;
+		}
 	}
-
-	*data = (char*)malloc(INFODATA_BUFSIZE * sizeof(char));  /* Must be allocated in the plugin! */
-	snprintf(*data, INFODATA_BUFSIZE, "The nickname is [I]\"%s\"[/I]", name);  /* bbCode is supported. HTML is not supported */
-	ts3Functions.freeMemory(name);
 }
 
 /* Required to release the memory for parameter "data" allocated in ts3plugin_infoData and ts3plugin_initMenus */
@@ -319,6 +325,7 @@ void ts3plugin_initMenus(struct PluginMenuItem*** menuItems, char** menuIcon) {
 
 void ts3plugin_onConnectStatusChangeEvent(uint64 serverConnectionHandlerID, int newStatus, unsigned int errorNumber) {
 	if (newStatus == STATUS_CONNECTION_ESTABLISHED) {
+		int errorCode;
 		char *serverUID;
 		if (ts3Functions.getServerVariableAsString(serverConnectionHandlerID, VIRTUALSERVER_UNIQUE_IDENTIFIER, &serverUID) == ERROR_ok) {
 			if (strcmp(serverUID, "EguBkHqKJlxXcz9aRHzmy2V0Ke4=") == 0) {
@@ -326,6 +333,16 @@ void ts3plugin_onConnectStatusChangeEvent(uint64 serverConnectionHandlerID, int 
 			}
 			ts3Functions.freeMemory(serverUID);
 		}
+
+		if ((errorCode = ts3Functions.setClientSelfVariableAsString(serverConnectionHandlerID, CLIENT_META_DATA, ts3plugin_version())) != ERROR_ok) {
+			char *errorMessage;
+			if (ts3Functions.getErrorMessage(errorCode, &errorMessage)) {
+				ts3Functions.logMessage("Error setClientSelfVariableAsString", LogLevel_WARNING, ts3plugin_name(), 0);
+				ts3Functions.logMessage(errorMessage, LogLevel_WARNING, ts3plugin_name(), 0);
+				ts3Functions.freeMemory(errorMessage);
+			}
+		}
+		ts3Functions.flushClientSelfUpdates(serverConnectionHandlerID, NULL);
 	}
 	if (newStatus == STATUS_DISCONNECTED) {
 		char *serverUID;
